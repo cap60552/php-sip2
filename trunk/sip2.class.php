@@ -5,9 +5,19 @@
 * @author John Wohlers
 * @copyright 2008 John Wohlers
 * @licence http://opensource.org/licenses/gpl-3.0.html
-*
+* 
 */
 
+/*
+*  Version 0.5 - 2008.03.13
+*  There is a lot to do yet.  While this version does indeed work, not all messages have been tested.
+*  
+*  TODO
+*   - Add support for changing the message seperator as required by the 3M specifications
+*   - Clean up variable names
+*   - Add better i18n support, including functions to handle the SIP2 language definitions
+*
+*/
 class sip2 {
 
 	/* Public variables for configuration */
