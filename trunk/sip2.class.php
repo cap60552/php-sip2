@@ -8,7 +8,7 @@
 * 
 */
 
-/*
+/**
 *  Version 0.5 - 2008.03.13
 *  There is a lot to do yet.  While this version does indeed work, not all messages have been tested.
 *  
@@ -16,8 +16,37 @@
 *   - Add support for changing the message seperator as required by the 3M specifications
 *   - Clean up variable names
 *   - Add better i18n support, including functions to handle the SIP2 language definitions
+*   - Add support for fine payment
+*   - Add full renewal support
 *
 */
+
+/**
+* General Usage:
+*    include('sip2.class.php');
+*
+*    // create object
+*    $mysip = new sip2;
+*
+*    // Set host name
+*    $mysip->hostname = 'server.example.com';
+*    $mysip->port = 6002;
+*    
+*    // Identify a patron
+*    $mysip->patron = '101010101';
+*    $mysip->patronpwd = '010101';
+*    
+*    // connect to SIP server 
+*    $result = $mysip->connect();
+*
+*    // Get Charged Items Raw response
+*    $in = $mysip->msgPatronInformation('charged');
+*
+*    // parse the raw response into an array
+*    $result = $mysip->parsePatronInfoResponse( $mysip->get_message($in) );
+*    
+*/
+
 class sip2 {
 
 	/* Public variables for configuration */
@@ -343,7 +372,6 @@ class sip2 {
 	
 	function get_message ($message) {
 		/* sends the current message, and gets the response */
-		/*Need to add in error checking (CRC) and retransmission ability */
 		$result ="";
 		$terminator = "";
 
