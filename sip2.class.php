@@ -47,6 +47,9 @@
 *    // connect to SIP server 
 *    $result = $mysip->connect();
 *
+*    // selfcheck status mesage goes here...
+*
+*
 *    // Get Charged Items Raw response
 *    $in = $mysip->msgPatronInformation('charged');
 *
@@ -98,6 +101,13 @@ class sip2 {
     private $retry = 0;
     
     function msgSCStatus($status, $width, $version=2) {
+	/* selfcheck status message, this should be sent immediatly after login */
+	/* status codes, from the spec:
+	 * 0 SC unit is OK
+         * 1 SC printer is out of paper
+         * 2 SC is about to shut down
+         */
+
         if ($version > 3) {
             $version = 2;
         }
@@ -189,6 +199,11 @@ class sip2 {
     
     function msgHold($mode, $expDate='', $holdtype, $item, $title, $fee='N') {
         /* mode validity check */
+        /* 
+         * - remove hold
+         * + place hold
+         * * modify hold
+         */
         if (strpos('-+*',$mode) === false) {
             /* not a valid mode - exit */
             $this->_debugmsg( "SIP2: Invalid hold mode: {$mode}");
@@ -197,12 +212,12 @@ class sip2 {
         
         if ($holdtype < 1 || $holdtype > 9) {
         /*
-                  * Valid hold types range from 1 - 9 
-                  * 1    other
-                  * 2   any copy of title
-                  * 3   specific copy
-                  * 4   any copy at a single branch or location
-                  */
+        * Valid hold types range from 1 - 9 
+        * 1   other
+        * 2   any copy of title
+        * 3   specific copy
+        * 4   any copy at a single branch or location
+        */
             $this->_debugmsg( "SIP2: Invalid hold type code: {$holdtype}");
             return false;
         }
@@ -356,14 +371,14 @@ class sip2 {
     function _datestamp() {
         /* generate a SIP2 compatable datestamp */
         /* From the spec:
-                  * YYYYMMDDZZZZHHMMSS. 
-                  * All dates and times are expressed according to the ANSI standard X3.30 for date and X3.43 for time. 
-                  * The ZZZZ field should contain blanks (code $20) to represent local time. To represent universal time, 
-                  *  a Z character(code $5A) should be put in the last (right hand) position of the ZZZZ field. 
-                  * To represent other time zones the appropriate character should be used; a Q character (code $51) 
-                  * should be put in the last (right hand) position of the ZZZZ field to represent Atlantic Standard Time. 
-                  * When possible local time is the preferred format.
-                  */
+         * YYYYMMDDZZZZHHMMSS. 
+         * All dates and times are expressed according to the ANSI standard X3.30 for date and X3.43 for time. 
+         * The ZZZZ field should contain blanks (code $20) to represent local time. To represent universal time, 
+         *  a Z character(code $5A) should be put in the last (right hand) position of the ZZZZ field. 
+         * To represent other time zones the appropriate character should be used; a Q character (code $51) 
+         * should be put in the last (right hand) position of the ZZZZ field to represent Atlantic Standard Time. 
+         * When possible local time is the preferred format.
+         */
         return date('Ymd    His');
     }
 
@@ -375,8 +390,8 @@ class sip2 {
             $field = substr($item,0,2);
             $value = substr($item,2);
             /* SD returns some odd values on ocassion, Unable to locate the purpose in spec, so I strip from 
-                            * the parsed array. Orig values will remain in ['raw'] element
-                           */
+             * the parsed array. Orig values will remain in ['raw'] element
+             */
             $clean = trim($value, "\x00..\x1F");
             if (trim($clean) <> '') {
                 $result[$field][] = $clean;
