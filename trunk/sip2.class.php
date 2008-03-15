@@ -1,15 +1,23 @@
 <?php
 /**
-* SIP2 Class 
-*
-* @author John Wohlers
-* @copyright 2008 John Wohlers
-* @licence http://opensource.org/licenses/gpl-3.0.html
-* 
-*/
+ * SIP2 Class
+ *
+ * This class provides a methoid of communicating with an Integrated
+ * Library System using 3M's SIP2 standard. 
+ *
+ * PHP version 5
+ *
+ *
+ * @package    
+ * @author     John Wohlers <john@wohlershome.net>
+ * @licence    http://opensource.org/licenses/gpl-3.0.html
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @version    $Id:$
+ * @link       http://php-sip2.googlecode.com/
+ */
 
 /**
-*  Version 0.5 - 2008.03.13
+*  2008.03.13
 *  There is a lot to do yet.  While this version does indeed work, not all messages have been tested.
 *  
 *  TODO
@@ -51,16 +59,16 @@ class sip2 {
 
 	/* Public variables for configuration */
 	public $hostname;
-	public $port = 6002; /* default sip2 port for Sirsi */
-	public $library = 'TODD';
-	public $language = '001'; /* 001 = english */
+	public $port       = 6002; /* default sip2 port for Sirsi */
+	public $library    = ''; /
+	public $language   = '001'; /* 001 = english */
 
 	/* Patron ID */
-	public $patron = ''; /* AA */
-	public $patronpwd = ''; /* AD */
+	public $patron     = ''; /* AA */
+	public $patronpwd  = ''; /* AD */
 	
 	/*terminal password */
-	public $AC = ''; /*AC */
+	public $AC         = ''; /*AC */
 	
 	/* Maximum number of resends allowed before get_message gives up */
 	public $maxretry = 3;
@@ -69,12 +77,12 @@ class sip2 {
 	public $MsgTerminator = "\r\n";
 	
 	/* Login Variables */
-	public $UIDalgorithm = 0; /* 0 = unencrypted, default */
-	public $PWDalgorithm = 0; /*  */
-	public $scLocation = '';  /* Location Code */
+	public $UIDalgorithm = 0;   /* 0 = unencrypted, default */
+	public $PWDalgorithm = 0;   /* undefined in documentation */
+	public $scLocation   = '';  /* Location Code */
 
 	/* Debug */
-	public $debug = false;
+	public $debug        = false;
 	
 	/* Private variables for building messages */
 	private $AO = 'WohlersSIP';
@@ -84,12 +92,12 @@ class sip2 {
 	private $socket;
 	
 	/* Sequence number counter */
-	private $seq = -1;
+	private $seq   = -1;
 
 	/* resend counter */
 	private $retry = 0;
 	
-	function msgSCStatus($status,$width,$version=2) {
+	function msgSCStatus($status, $width, $version=2) {
 		if ($version > 3) {
 			$version = 2;
 		}
@@ -115,7 +123,7 @@ class sip2 {
 	
 	}
 
-	function msgRenew($item,$title,$nbDueDate='',$itmProp ='',$fee='N') {
+	function msgRenew($item, $title, $nbDueDate='', $itmProp ='', $fee='N') {
 		$message = sprintf( "29%1s%1s%18s%18sAO%s|AA%s|AD%s|AB%s|AJ%s|AC%s|CH%s|BO%1s|AY%1sAZ",
 			"N", /* 3rd party allowed */
 			"N", /* No Block */
@@ -149,7 +157,7 @@ class sip2 {
 		return $message . $this->_crc($message) . $this->MsgTerminator;
 	
 	}
-	function msgPatronInformation($type,$start="1",$end="5") {
+	function msgPatronInformation($type, $start="1", $end="5") {
 		$summary['hold']     = 'Y     ';
 		$summary['overdue']  = ' Y    ';
 		$summary['charged']  = '  Y   ';
@@ -173,7 +181,7 @@ class sip2 {
 		return $message . $this->_crc($message) . $this->MsgTerminator;
 	}
 	
-	function msgHold($mode,$expDate='',$holdtype,$item,$title,$fee='N') {
+	function msgHold($mode, $expDate='', $holdtype, $item, $title, $fee='N') {
 		/* mode validity check */
 		if (strpos('-+*',$mode) === false) {
 			/* not a valid mode - exit */
@@ -237,6 +245,19 @@ class sip2 {
 	
 		return $message . $this->_crc($message) . $this->MsgTerminator;
 	}
+
+	function msgBlockPatron($message, $retained='N') {
+		/* Blocks a patron, and responds with a patron status response */
+		$message = sprintf("01%1s%18s|AO%s|AL%s|AA%s|AC%s|AY%1sAZ"
+			$retained, /* I can't really imagine a web app being able to retain the card... but... someone may find this useful*/
+			$this->_datestamp(),
+			$this->AO,
+			$message,
+			$this->AA,
+			$this->AC,
+			$this->_getseqnum()
+		);
+	}
 	
 	function msgRequestACSResend () {
 		$message = sprintf("97AZ");
@@ -249,9 +270,9 @@ class sip2 {
 		array( 
 			'Ok'      			=> substr($response,2,1),
 			'RenewalOk'			=> substr($response,3,1),
-            'Magnetic'			=> substr($response,4,1),
-            'Desensitize'		=> substr($response,5,1),
-            'TransactionDate'   => substr($response,6,18),
+			'Magnetic'			=> substr($response,4,1),
+			'Desensitize'			=> substr($response,5,1),
+			'TransactionDate'		=> substr($response,6,18),
          );    
 
 
@@ -266,8 +287,8 @@ class sip2 {
 		array( 
 			'Ok'				=> substr($response,2,1),
 			'available'			=> substr($response,3,1),
-            'TransactionDate'	=> substr($response,4,18),
-            'ExpirationDate'	=> substr($response,22,18)			
+			'TransactionDate'		=> substr($response,4,18),
+			'ExpirationDate'		=> substr($response,22,18)			
          );    
 
 
@@ -279,7 +300,7 @@ class sip2 {
 	function parsePatronInfoResponse ($response) {
 	
 		$result['fixed'] = 
-		array( 
+            array( 
             'PatronStatus'      => substr($response,2,14),
             'Language'          => substr($response,16,3),
             'TransactionDate'   => substr($response,19,18),
@@ -289,10 +310,10 @@ class sip2 {
             'FineCount'         => intval (substr($response,49,4)),
             'RecallCount'       => intval (substr($response,53,4)),
             'UnavailableCount'  => intval (substr($response,57,4))
-         );    
+            );    
 
-		$result['variable'] = $this->_parsevariabledata($response, 61);
-		return $result;
+            $result['variable'] = $this->_parsevariabledata($response, 61);
+            return $result;
 	}
 
 	function parseItemInfoResponse ($response) {
