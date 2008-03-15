@@ -17,15 +17,18 @@
 */
 
 /**
-*  2008.03.13
+*  2008.03.15
 *  There is a lot to do yet.  While this version does indeed work, not all messages have been tested.
 *  
 *  TODO
 *   - Add support for changing the message seperator as required by the 3M specifications
-*   - Clean up variable names
+*       This will likely require a redesign  of how messages are built.  perhaps private functions:
+*       _newMessage($code), _addFixedOption($value,$len), _addVarOption($field,$value), _returnMessage($withSeq,$withCrc)
+*       This should alow some sanity chekcing too, once addVaroption is added, _addFixedOpption should fail until _newMessage is called.
+*   - Clean up variable names, check for consistancy
 *   - Add better i18n support, including functions to handle the SIP2 language definitions
-*   - Add support for fine payment
-*   - Add full renewal support
+*   - Add remaining messages
+*   - Add remaining messages parsers
 *
 */
 
@@ -100,60 +103,6 @@ class sip2 {
     /* resend counter */
     private $retry = 0;
     
-    function msgSCStatus($status, $width, $version=2) {
-	/* selfcheck status message, this should be sent immediatly after login */
-	/* status codes, from the spec:
-	 * 0 SC unit is OK
-         * 1 SC printer is out of paper
-         * 2 SC is about to shut down
-         */
-
-        if ($version > 3) {
-            $version = 2;
-        }
-        $message = sprintf( "99%1s%3s%03.2fAY%1s|AZ",
-        $status,
-        $width,
-        $version,
-        $this->_getseqnum()
-        );
-
-        return $message . $this->_crc($message) . $this->MsgTerminator;
-    }
-    
-    function msgItemInformation($item) {
-        $message = sprintf( "17%18sAO%s|AB%s|AC%s|AY%1sAZ",
-        $this->_datestamp(),		
-        $this->AO,
-        $item,
-        $this->AC,			
-        $this->_getseqnum()			
-        );
-        return $message . $this->_crc($message) . $this->MsgTerminator;
-        
-    }
-
-    function msgRenew($item, $title, $nbDueDate='', $itmProp ='', $fee='N') {
-        $message = sprintf( "29%1s%1s%18s%18sAO%s|AA%s|AD%s|AB%s|AJ%s|AC%s|CH%s|BO%1s|AY%1sAZ",
-        "N", /* 3rd party allowed */
-        "N", /* No Block */
-        $this->_datestamp(),
-        $nbDueDate,
-        $this->AO,
-        $this->patron,
-        $this->patronpwd,
-        $item,
-        $title,
-        $this->AC, /*Terminal Password */
-        $itmProp,
-        $fee,
-        $this->_getseqnum()				
-        
-        );
-        return $message . $this->_crc($message) . $this->MsgTerminator;
-
-    }
-
     function msgPatronStatusRequest() {
         $message = sprintf( "23%3s%18sAO%s|AA%s|AC%s|AD%s|AY%1sAZ",
         $this->language,
@@ -167,12 +116,116 @@ class sip2 {
         return $message . $this->_crc($message) . $this->MsgTerminator;
         
     }
+    
+    function msgCheckout($item, $nbDateDue='', $scRenewal='N', $itmProp ='', $fee='N', $noBlock='N', $cancel='N') {
+    /* Checkout an item  (11) - untested */
+        $message = sprintf( "11%1s%1s%18s%18s|AO%s|AA%s|AB%s|AC%s|CH%s|AD%s|BO%1s|BI%1s|AY%1sAZ",
+        $scRenewal,
+        $noBlock,
+        $this->_datestamp(),	
+        $nbDateDue,
+        $this->AO,
+        $this->patron,
+        $item,
+        $this->AC,			
+        $itmProp,
+        $this->patronpwd,
+        $fee,
+        $cancel,
+        $this->_getseqnum()			
+        );
+    
+        return $message . $this->_crc($message) . $this->MsgTerminator;
+    }
+    
+    function msgCheckin($item, $itmReturnDate, $itmLocation = '', $itmProp = '', $noBlock='N', $cancel) {
+    /* Checkin an item (09) - untested */
+        if ($itmLocation == '') {
+            /* If no location is specified, assume the defualt location of the SC */
+            $itmLocation = $this->scLocation;
+        } 
+        $message = sprintf( "09%1s%18s%18s|AP%s|AO%s|AB%s|AC%s|CH%s|BI%1s|AY%1sAZ",
+        $noBlock,
+        $this->_datestamp(),	
+        $itmReturnDate,
+        $this->AP,
+        $this->AO,
+        $item,
+        $this->AC,			
+        $itmProp,
+        $this->cancel,
+        $this->_getseqnum()			
+        );
+
+        return $message . $this->_crc($message) . $this->MsgTerminator;
+    }
+
+    function msgBlockPatron($message, $retained='N') {
+        /* Blocks a patron, and responds with a patron status response  (01) - untested */
+        $message = sprintf("01%1s%18s|AO%s|AL%s|AA%s|AC%s|AY%1sAZ",
+        $retained, /* Y if card has been retained */
+        $this->_datestamp(),
+        $this->AO,
+        $message,
+        $this->AA,
+        $this->AC,
+        $this->_getseqnum()
+        );
+        return $message . $this->_crc($message) . $this->MsgTerminator;
+    }
+    
+    function msgSCStatus($status = 0, $width = 80, $version = 2) {
+    /* selfcheck status message, this should be sent immediatly after login */
+    /* status codes, from the spec:
+            * 0 SC unit is OK
+            * 1 SC printer is out of paper
+            * 2 SC is about to shut down
+            */
+
+        if ($version > 3) {
+            $version = 2;
+        }
+        if ($status < 0 || $status > 2) {
+            $this->_debugmsg( "SIP2: Invalid status passed to msgSCStatus" );
+            return false;
+        }    
+        $message = sprintf( "99%1s%3s%03.2fAY%1s|AZ",
+        $status,
+        $width,
+        $version,
+        $this->_getseqnum()
+        );
+
+        return $message . $this->_crc($message) . $this->MsgTerminator;
+    }
+
+    function msgRequestACSResend () {
+        /* Used to request a resend due to CRC mismatch - No sequence number is used */
+        $message = sprintf("97AZ");
+        return $message . $this->_crc($message) . $this->MsgTerminator;
+    }
+
+    function msgLogin($sipLogin, $sipPassword) {
+    /* Login (93) - untested */
+        $message = sprintf("93%1s%1sCN%s|CO%s|CP%s|AY%1sAZ",
+        $this->UIDalgorithm,
+        $this->PWDalgorithm,
+        $sipLogin,
+        $sipPassword,
+        $this->scLocation,
+        $this->_getseqnum()
+        );
+        
+        return $message . $this->_crc($message) . $this->MsgTerminator;
+    }
+
     function msgPatronInformation($type, $start="1", $end="5") {
-        /* 
-                  * According to the specification:
-                  * Only one category of items should be  requested at a time, i.e. it would take 6 of these messages, 
-                  * each with a different position set to Y, to get all the detailed information about a patron's items.
-                  */
+
+    /* 
+           * According to the specification:
+           * Only one category of items should be  requested at a time, i.e. it would take 6 of these messages, 
+           * each with a different position set to Y, to get all the detailed information about a patron's items.
+           */
         $summary['none']     = '      ';
         $summary['hold']     = 'Y     ';
         $summary['overdue']  = ' Y    ';
@@ -196,6 +249,37 @@ class sip2 {
         );
         return $message . $this->_crc($message) . $this->MsgTerminator;
     }
+
+    function msgEndPatronSession() {
+    /*  End Patron Session, shoudl be sent before switching to a new patron. (35) - untested */
+        $message = sprintf("35%18sAO%s|AA%s|AC%s|AD%s|AY%1sAZ",
+        $this->_datestamp(),
+        $this->AO,
+        $this->patron,
+        $this->AC,
+        $this->patronpwd,
+        $this->_getseqnum()
+        );
+        return $message . $this->_crc($message) . $this->MsgTerminator;
+    }
+    
+    /* Fee paid function should go here */
+
+    function msgItemInformation($item) {
+        $message = sprintf( "17%18sAO%s|AB%s|AC%s|AY%1sAZ",
+        $this->_datestamp(),		
+        $this->AO,
+        $item,
+        $this->AC,			
+        $this->_getseqnum()			
+        );
+        return $message . $this->_crc($message) . $this->MsgTerminator;
+        
+    }
+
+    /* Item status update  function goes here */
+    
+    /* Patron Enable function goes here */
     
     function msgHold($mode, $expDate='', $holdtype, $item, $title, $fee='N') {
         /* mode validity check */
@@ -240,51 +324,29 @@ class sip2 {
         return $message . $this->_crc($message) . $this->MsgTerminator;
 
     }
-    
-    function msgEndPatronSession() {
-        $message = sprintf("35%18sAO%s|AA%s|AC%s|AD%s|AY%1sAZ",
+
+    function msgRenew($item, $title, $nbDueDate='', $itmProp ='', $fee='N', $noBlock='N') {
+        $message = sprintf( "29%1s%1s%18s%18sAO%s|AA%s|AD%s|AB%s|AJ%s|AC%s|CH%s|BO%1s|AY%1sAZ",
+        "N", /* 3rd party allowed */
+        $noBlock, /* No Block */
         $this->_datestamp(),
+        $nbDueDate,
         $this->AO,
         $this->patron,
-        $this->AC,
         $this->patronpwd,
-        $this->_getseqnum()
-        );
-        return $message . $this->_crc($message) . $this->MsgTerminator;
-    }
-
-    function msgLogin($sipLogin, $sipPassword) {
-        $message = sprintf("93%1s%1sCN%s|CO%s|CP%s|AY%1sAZ",
-        $this->UIDalgorithm,
-        $this->PWDalgorithm,
-        $sipLogin,
-        $sipPassword,
-        $this->scLocation,
-        $this->_getseqnum()
-        );
+        $item,
+        $title,
+        $this->AC, /*Terminal Password */
+        $itmProp,
+        $fee,
+        $this->_getseqnum()				
         
-        return $message . $this->_crc($message) . $this->MsgTerminator;
-    }
-
-    function msgBlockPatron($message, $retained='N') {
-        /* Blocks a patron, and responds with a patron status response */
-        $message = sprintf("01%1s%18s|AO%s|AL%s|AA%s|AC%s|AY%1sAZ",
-        $retained, /* Y if card has been retained */
-        $this->_datestamp(),
-        $this->AO,
-        $message,
-        $this->AA,
-        $this->AC,
-        $this->_getseqnum()
         );
         return $message . $this->_crc($message) . $this->MsgTerminator;
+
     }
-    
-    function msgRequestACSResend () {
-        /* Used to request a resend due to CRC mismatch - No sequence number is used */
-        $message = sprintf("97AZ");
-        return $message . $this->_crc($message) . $this->MsgTerminator;
-    }
+
+    /* Renew All message function goes here (65) */
     
     function parseRenewResponse ($response) {
         /* Response Example:  300NUU20080228    222232AOWOHLERS|AAX00000241|ABM02400028262|AJFolksongs of Britain and Ireland|AH5/23/2008,23:59|CH|AFOverride required to exceed renewal limit.|AY1AZCDA5 */
@@ -367,65 +429,6 @@ class sip2 {
         return $result;
     }
     
-    /* Core local utility functions */	
-    function _datestamp() {
-        /* generate a SIP2 compatable datestamp */
-        /* From the spec:
-         * YYYYMMDDZZZZHHMMSS. 
-         * All dates and times are expressed according to the ANSI standard X3.30 for date and X3.43 for time. 
-         * The ZZZZ field should contain blanks (code $20) to represent local time. To represent universal time, 
-         *  a Z character(code $5A) should be put in the last (right hand) position of the ZZZZ field. 
-         * To represent other time zones the appropriate character should be used; a Q character (code $51) 
-         * should be put in the last (right hand) position of the ZZZZ field to represent Atlantic Standard Time. 
-         * When possible local time is the preferred format.
-         */
-        return date('Ymd    His');
-    }
-
-    function _parsevariabledata($response, $start) {
-
-        $result = array();
-        $result['Raw'] = explode("|", substr($response,$start,-7));
-        foreach ($result['Raw'] as $item) {
-            $field = substr($item,0,2);
-            $value = substr($item,2);
-            /* SD returns some odd values on ocassion, Unable to locate the purpose in spec, so I strip from 
-             * the parsed array. Orig values will remain in ['raw'] element
-             */
-            $clean = trim($value, "\x00..\x1F");
-            if (trim($clean) <> '') {
-                $result[$field][] = $clean;
-            }
-        }		
-        $result['AZ'][] = substr($response,-5);
-
-        return ($result);
-    }
-
-    function _crc($buf) {
-        /* Calculate CRC  */
-        $sum=0;
-
-        $len = strlen($buf);
-        for ($n = 0; $n < $len; $n++) {
-            $sum = $sum + ord(substr($buf,$n,1));
-        } 
-
-        $crc = -($sum & 0xFFFF);
-
-        return substr(sprintf ("%4X", $crc),4);
-    } /* end crc */	
-
-    function _getseqnum() {
-        /* Get a sequence number for the AY field */
-        /* valid numbers range 0-9 */
-        $this->seq++;
-        if ($this->seq > 9 ) {
-            $this->seq = 0;
-        }
-        return ($this->seq);
-    }
-    
     function get_message ($message) {
         /* sends the current message, and gets the response */
         $result     = '';
@@ -502,7 +505,67 @@ class sip2 {
         /*  Close the socket */
         socket_close($this->socket);
     }
-    
+
+    /* Core local utility functions */	
+    function _datestamp() {
+        /* generate a SIP2 compatable datestamp */
+        /* From the spec:
+         * YYYYMMDDZZZZHHMMSS. 
+         * All dates and times are expressed according to the ANSI standard X3.30 for date and X3.43 for time. 
+         * The ZZZZ field should contain blanks (code $20) to represent local time. To represent universal time, 
+         *  a Z character(code $5A) should be put in the last (right hand) position of the ZZZZ field. 
+         * To represent other time zones the appropriate character should be used; a Q character (code $51) 
+         * should be put in the last (right hand) position of the ZZZZ field to represent Atlantic Standard Time. 
+         * When possible local time is the preferred format.
+         */
+        return date('Ymd    His');
+    }
+
+    function _parsevariabledata($response, $start) {
+
+        $result = array();
+        $result['Raw'] = explode("|", substr($response,$start,-7));
+        foreach ($result['Raw'] as $item) {
+            $field = substr($item,0,2);
+            $value = substr($item,2);
+            /* SD returns some odd values on ocassion, Unable to locate the purpose in spec, so I strip from 
+             * the parsed array. Orig values will remain in ['raw'] element
+             */
+            $clean = trim($value, "\x00..\x1F");
+            if (trim($clean) <> '') {
+                $result[$field][] = $clean;
+            }
+        }		
+        $result['AZ'][] = substr($response,-5);
+
+        return ($result);
+    }
+
+    function _crc($buf) {
+        /* Calculate CRC  */
+        $sum = 0;
+
+        $len = strlen($buf);
+        for ($n = 0; $n < $len; $n++) {
+            $sum = $sum + ord(substr($buf, $n, 1));
+        } 
+
+        $crc = ($sum & 0xFFFF) * -1;
+
+        /* 2008.03.15 - Fixed a bug that allowed the checksum to be larger then 4 digits */
+        return substr(sprintf ("%4X", $crc), -4, 4);
+    } /* end crc */	
+
+    function _getseqnum() {
+        /* Get a sequence number for the AY field */
+        /* valid numbers range 0-9 */
+        $this->seq++;
+        if ($this->seq > 9 ) {
+            $this->seq = 0;
+        }
+        return ($this->seq);
+    }
+        
     function _debugmsg($message) {
         /* custom debug function,  why repeat the check for the debug flag in code... */
         if ($this->debug) { 
