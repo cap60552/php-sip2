@@ -60,7 +60,7 @@ class sip2 {
 	/* Public variables for configuration */
 	public $hostname;
 	public $port       = 6002; /* default sip2 port for Sirsi */
-	public $library    = ''; /
+	public $library    = ''; 
 	public $language   = '001'; /* 001 = english */
 
 	/* Patron ID */
@@ -248,8 +248,8 @@ class sip2 {
 
 	function msgBlockPatron($message, $retained='N') {
 		/* Blocks a patron, and responds with a patron status response */
-		$message = sprintf("01%1s%18s|AO%s|AL%s|AA%s|AC%s|AY%1sAZ"
-			$retained, /* I can't really imagine a web app being able to retain the card... but... someone may find this useful*/
+		$message = sprintf("01%1s%18s|AO%s|AL%s|AA%s|AC%s|AY%1sAZ",
+			$retained, /* I can't really imagine a web app being able to retain the card.*/
 			$this->_datestamp(),
 			$this->AO,
 			$message,
@@ -257,6 +257,7 @@ class sip2 {
 			$this->AC,
 			$this->_getseqnum()
 		);
+		return $message . $this->_crc($message) . $this->MsgTerminator;
 	}
 	
 	function msgRequestACSResend () {
