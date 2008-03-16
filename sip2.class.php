@@ -255,7 +255,7 @@ class sip2 {
     }
     
     /* Fee paid function should go here */
-    function msgFeePaid ($feeType, $pmtType, $pmtAmount, $curType = 'USD', $feeId = '', $transId ='') {
+    function msgFeePaid ($feeType, $pmtType, $pmtAmount, $curType = 'USD', $feeId = '', $transId = '') {
     /* Fee payment function (37) - untested */
             /* Fee Types: */
             /* 01 other/unknown */
@@ -804,7 +804,7 @@ class sip2 {
             $this->_debugmsg( "SIP2: Skipping optional field {$field}");
         } else {
             $this->noFixed  = true; /* no more fixed for this message */
-            $this->msgBuild .= $field . $value . $this->fldTerminator;
+            $this->msgBuild .= $field . substr($value, 0, 255) . $this->fldTerminator;
         }
         return true;
     }
