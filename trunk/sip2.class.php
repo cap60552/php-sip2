@@ -12,7 +12,7 @@
 * @author     John Wohlers <john@wohlershome.net>
 * @licence    http://opensource.org/licenses/gpl-3.0.html
 * @copyright  John Wohlers <john@wohlershome.net>
-* @version    $Id:$
+* @version    $Id$
 * @link       http://php-sip2.googlecode.com/
 */
 
@@ -23,8 +23,6 @@
 *  TODO
 *   - Clean up variable names, check for consistancy
 *   - Add better i18n support, including functions to handle the SIP2 language definitions
-*   - Add remaining messages
-*   - Add remaining messages parsers
 *
 */
 
