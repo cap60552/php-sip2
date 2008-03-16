@@ -105,6 +105,7 @@ class sip2 {
     private $noFixed = false;
     
     function msgPatronStatusRequest() {
+        /* Server Response: Patron Status Response message. */
         $this->_newMessage('23');
         $this->_addFixedOption($this->language, 3);
         $this->_addFixedOption($this->_datestamp(), 18);
@@ -112,8 +113,8 @@ class sip2 {
         $this->_addVarOption('AA',$this->patron);
         $this->_addVarOption('AC',$this->AC, true);
         $this->_addVarOption('AD',$this->patronpwd, true);
-        return $this->_returnMessage();        
-    }
+        return $this->_returnMessage();     
+        }
     
     function msgCheckout($item, $nbDateDue ='', $scRenewal='N', $itmProp ='', $fee='N', $noBlock='N', $cancel='N') {
     /* Checkout an item  (11) - untested */
@@ -421,8 +422,18 @@ class sip2 {
         return $this->_returnMessage();
     }
     
-    function parseRenewResponse ($response) {
-        /* Response Example:  300NUU20080228    222232AOWOHLERS|AAX00000241|ABM02400028262|AJFolksongs of Britain and Ireland|AH5/23/2008,23:59|CH|AFOverride required to exceed renewal limit.|AY1AZCDA5 */
+    function parsePatronStatusResponse($response) {
+        $result['fixed'] = 
+        array( 
+        'PatronStatus'      => substr($response, 2, 14),
+        'Language'          => substr($response, 16, 3),
+        'TransactionDate'   => substr($response, 19, 18),
+        );    
+
+        $result['variable'] = $this->_parsevariabledata($response, 37);
+    }
+
+    function parseCheckoutResponse($response) {
         $result['fixed'] = 
         array( 
         'Ok'                => substr($response,2,1),
@@ -430,70 +441,76 @@ class sip2 {
         'Magnetic'          => substr($response,4,1),
         'Desensitize'       => substr($response,5,1),
         'TransactionDate'   => substr($response,6,18),
-        );    
-
-
+        );
+        
         $result['variable'] = $this->_parsevariabledata($response, 24);
-
-        return $result;
     }
-    
-    function parseHoldResponse ($response) {
 
+    function parseCheckinResponse($response) {
         $result['fixed'] = 
         array( 
         'Ok'                => substr($response,2,1),
-        'available'         => substr($response,3,1),
-        'TransactionDate'   => substr($response,4,18),
-        'ExpirationDate'    => substr($response,22,18)			
-        );    
-
-
+        'Resensitize'       => substr($response,3,1),
+        'Magnetic'          => substr($response,4,1),
+        'Alert'             => substr($response,5,1),
+        'TransactionDate'   => substr($response,6,18),
+        );
+        
         $result['variable'] = $this->_parsevariabledata($response, 24);
+    }
 
+    function parseACSStatusResponse($response) {
+        $result['fixed'] = 
+        array( 
+        'Online'            => substr($response, 2, 1),
+        'Checkin'           => substr($response, 3, 1),  /* is Checkin by the SC allowed ?*/
+        'Checkout'          => substr($response, 4, 1),  /* is Checkout by the SC allowed ?*/
+        'PatronUpdate'      => substr($response, 5, 1),  /* is patron status updating by the SC allowed ? (status update ok)*/
+        'Offline'           => substr($response, 6, 1),
+        'Timeout'           => substr($response, 7, 3),
+        'Retries'           => substr($response, 10, 3), 
+        'TransactionDate'   => substr($response, 13, 18),
+        'Protocol'          => substr($response, 31, 4),
+        );
+        
+        $result['variable'] = $this->_parsevariabledata($response, 35);
+    }
+
+    function parseLoginResponse($response) {
+        $result['fixed'] = 
+        array( 
+        'Ok'                => substr($response, 2, 1),
+        );
+        $result['variable'] = array();
         return $result;
-    }	
+    }
 
-    function parsePatronInfoResponse ($response) {
+    function parsePatronInfoResponse($response) {
         
         $result['fixed'] = 
         array( 
-        'PatronStatus'      => substr($response,2,14),
-        'Language'          => substr($response,16,3),
-        'TransactionDate'   => substr($response,19,18),
-        'HoldCount'         => intval (substr($response,37,4)),
-        'OverdueCount'      => intval (substr($response,41,4)),
-        'ChargedCount'      => intval (substr($response,45,4)),
-        'FineCount'         => intval (substr($response,49,4)),
-        'RecallCount'       => intval (substr($response,53,4)),
-        'UnavailableCount'  => intval (substr($response,57,4))
+        'PatronStatus'      => substr($response, 2, 14),
+        'Language'          => substr($response, 16, 3),
+        'TransactionDate'   => substr($response, 19, 18),
+        'HoldCount'         => intval (substr($response, 37, 4)),
+        'OverdueCount'      => intval (substr($response, 41, 4)),
+        'ChargedCount'      => intval (substr($response, 45, 4)),
+        'FineCount'         => intval (substr($response, 49, 4)),
+        'RecallCount'       => intval (substr($response, 53, 4)),
+        'UnavailableCount'  => intval (substr($response, 57, 4))
         );    
 
         $result['variable'] = $this->_parsevariabledata($response, 61);
         return $result;
     }
 
-    function parseItemInfoResponse ($response) {
-        $result['fixed'] = 
-        array( 
-        'CirculationStatus' => intval (substr($response,2,2)),
-        'SecurityMarker'    => intval (substr($response,4,2)),
-        'FeeType'           => intval (substr($response,6,2)),
-        'TransactionDate'   => substr($response,8,18),
-        );    
-
-        $result['variable'] = $this->_parsevariabledata($response, 26);
-
-        return $result;
-    }
-    
-    function parseEndSessionResponse ($response) {
+    function parseEndSessionResponse($response) {
         /*   Response example:  36Y20080228 145537AOWOHLERS|AAX00000000|AY9AZF474   */
         
         $result['fixed'] = 
         array( 
-        'EndSession'        => substr($response,2,1),
-        'TransactionDate'   => substr($response,3,18),
+        'EndSession'        => substr($response, 2, 1),
+        'TransactionDate'   => substr($response, 3, 18),
         );    
 
 
@@ -501,6 +518,109 @@ class sip2 {
         
         return $result;
     }
+    
+    function parseFeePaidResponse($response) {
+        $result['fixed'] = 
+        array( 
+        'PaymentAccepted'   => substr($response, 2, 1),
+        'TransactionDate'   => substr($response, 3, 18),
+        );    
+
+        $result['variable'] = $this->_parsevariabledata($response, 21);
+        return $result;
+        
+    }
+
+    function parseItemInfoResponse($response) {
+        $result['fixed'] = 
+        array( 
+        'CirculationStatus' => intval (substr($response, 2, 2)),
+        'SecurityMarker'    => intval (substr($response, 4, 2)),
+        'FeeType'           => intval (substr($response, 6, 2)),
+        'TransactionDate'   => substr($response, 8, 18),
+        );    
+
+        $result['variable'] = $this->_parsevariabledata($response, 26);
+
+        return $result;
+    }
+
+    function parseItemStatusResponse($response) {
+        $result['fixed'] = 
+        array( 
+        'PropertiesOk'      => substr($response, 2, 1),
+        'TransactionDate'   => substr($response, 3, 18),
+        );    
+
+        $result['variable'] = $this->_parsevariabledata($response, 21);
+        return $result;
+        
+    }
+
+    function parsePatronEnableResponse($response) {
+        $result['fixed'] = 
+        array( 
+        'PatronStatus'      => substr($response, 2, 14),
+        'Language'          => substr($response, 16, 3),
+        'TransactionDate'   => substr($response, 19, 18),
+        );    
+
+        $result['variable'] = $this->_parsevariabledata($response, 37);
+        return $result;
+        
+    }
+
+    function parseHoldResponse($response) {
+
+        $result['fixed'] = 
+        array( 
+        'Ok'                => substr($response, 2, 1),
+        'available'         => substr($response, 3, 1),
+        'TransactionDate'   => substr($response, 4, 18),
+        'ExpirationDate'    => substr($response, 22, 18)			
+        );    
+
+
+        $result['variable'] = $this->_parsevariabledata($response, 40);
+
+        return $result;
+    }	
+    
+    
+    function parseRenewResponse($response) {
+        /* Response Example:  300NUU20080228    222232AOWOHLERS|AAX00000241|ABM02400028262|AJFolksongs of Britain and Ireland|AH5/23/2008,23:59|CH|AFOverride required to exceed renewal limit.|AY1AZCDA5 */
+        $result['fixed'] = 
+        array( 
+        'Ok'                => substr($response, 2, 1),
+        'RenewalOk'         => substr($response, 3, 1),
+        'Magnetic'          => substr($response, 4, 1),
+        'Desensitize'       => substr($response, 5, 1),
+        'TransactionDate'   => substr($response, 6, 18),
+        );    
+
+
+        $result['variable'] = $this->_parsevariabledata($response, 24);
+
+        return $result;
+    }
+    
+    function parseRenewAllResponse($response) {
+        $result['fixed'] = 
+        array( 
+        'Ok'                => substr($response, 2, 1),
+        'Renewed'           => substr($response, 3, 4),
+        'Unrenewed'         => substr($response, 7, 4),
+        'TransactionDate'   => substr($response, 11, 18),
+        );    
+
+
+        $result['variable'] = $this->_parsevariabledata($response, 29);
+
+        return $result;
+    }
+
+
+    
     
     function get_message ($message) {
         /* sends the current message, and gets the response */
