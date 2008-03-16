@@ -256,7 +256,52 @@ class sip2 {
     }
     
     /* Fee paid function should go here */
+    function msgFeePaid ($feeType, $pmtType, $pmtAmount, $curType = 'USD', $feeId = '', $transId ='') {
+    /* Fee payment function (37) - untested */
+            /* Fee Types: */
+            /* 01 other/unknown */
+            /* 02 administrative */
+            /* 03 damage */
+            /* 04 overdue */
+            /* 05 processing */
+            /* 06 rental*/
+            /* 07 replacement */
+            /* 08 computer access charge */
+            /* 09 hold fee */
 
+            /* Value Payment Type */
+            /* 00   cash */
+            /* 01   VISA */
+            /* 02   credit card */
+    
+        if (!is_numeric($feeType) || $feeType > 99 || $feeType < 1) {
+            /* not a valid fee type - exit */
+            $this->_debugmsg( "SIP2: (msgFeePaid) Invalid fee type: {$feeType}");
+            return false;
+        }
+
+        if (!is_numeric($pmtType) || $pmtType > 99 || $pmtType < 0) {
+            /* not a valid payment type - exit */
+            $this->_debugmsg( "SIP2: (msgFeePaid) Invalid payment type: {$pmtType}");
+            return false;
+        }
+        
+        $this->_newMessage('37');
+        $this->_addFixedOption($this->_datestamp(), 18);
+        $this->_addFixedOption(sprintf('%02d', $feeType), 2);
+        $this->_addFixedOption(sprintf('%02d', $pmtType), 2);
+        $this->_addFixedOption($curType, 3); 
+        $this->_addVarOption('BV',$pmtAmount); /* due to currancy format localization, it is up to the programmer to properly format their payment amount */
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AA',$this->patron);
+        $this->_addVarOption('AC',$this->AC, true);
+        $this->_addVarOption('AD',$this->patronpwd, true);
+        $this->_addVarOption('CG',$feeId, true);
+        $this->_addVarOption('BK',$transId, true);
+       
+        return $this->_returnMessage();
+    }
+    
     function msgItemInformation($item) {
 
         $this->_newMessage('17');
