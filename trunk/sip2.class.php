@@ -21,10 +21,6 @@
 *  There is a lot to do yet.  While this version does indeed work, not all messages have been tested.
 *  
 *  TODO
-*   - Add support for changing the message seperator as required by the 3M specifications
-*       This will likely require a redesign  of how messages are built.  perhaps private functions:
-*       _newMessage($code), _addFixedOption($value,$len), _addVarOption($field,$value), _returnMessage($withSeq,$withCrc)
-*       This should alow some sanity chekcing too, once addVaroption is added, _addFixedOpption should fail until _newMessage is called.
 *   - Clean up variable names, check for consistancy
 *   - Add better i18n support, including functions to handle the SIP2 language definitions
 *   - Add remaining messages
@@ -79,8 +75,9 @@ class sip2 {
     /* Maximum number of resends allowed before get_message gives up */
     public $maxretry     = 3;
     
-    /* Message Terminator  */
-    public $MsgTerminator= "\r\n";
+    /* Terminator s */
+    public $fldTerminator = '|';
+    public $msgTerminator = "\r\n";
     
     /* Login Variables */
     public $UIDalgorithm = 0;   /* 0    = unencrypted, default */
@@ -103,79 +100,82 @@ class sip2 {
     /* resend counter */
     private $retry = 0;
     
+    /* Workarea for building a message */
+    private $msgBuild = '';
+    private $noFixed = false;
+    
     function msgPatronStatusRequest() {
-        $message = sprintf( "23%3s%18sAO%s|AA%s|AC%s|AD%s|AY%1sAZ",
-        $this->language,
-        $this->_datestamp(),		
-        $this->AO,
-        $this->patron,
-        $this->AC,	
-        $this->patronpwd,			
-        $this->_getseqnum()			
-        );
-        return $message . $this->_crc($message) . $this->MsgTerminator;
-        
+        $this->_newMessage('23');
+        $this->_addFixedOption($this->language, 3);
+        $this->_addFixedOption($this->_datestamp(), 18);
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AA',$this->patron);
+        $this->_addVarOption('AC',$this->AC, true);
+        $this->_addVarOption('AD',$this->patronpwd, true);
+        return $this->_returnMessage();        
     }
     
-    function msgCheckout($item, $nbDateDue='', $scRenewal='N', $itmProp ='', $fee='N', $noBlock='N', $cancel='N') {
+    function msgCheckout($item, $nbDateDue ='', $scRenewal='N', $itmProp ='', $fee='N', $noBlock='N', $cancel='N') {
     /* Checkout an item  (11) - untested */
-        $message = sprintf( "11%1s%1s%18s%18s|AO%s|AA%s|AB%s|AC%s|CH%s|AD%s|BO%1s|BI%1s|AY%1sAZ",
-        $scRenewal,
-        $noBlock,
-        $this->_datestamp(),	
-        $nbDateDue,
-        $this->AO,
-        $this->patron,
-        $item,
-        $this->AC,			
-        $itmProp,
-        $this->patronpwd,
-        $fee,
-        $cancel,
-        $this->_getseqnum()			
-        );
-    
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+        $this->_newMessage('11');
+        $this->_addFixedOption($scRenewal, 1);
+        $this->_addFixedOption($noBlock, 1);
+        $this->_addFixedOption($this->_datestamp(), 18);
+        if ($nbDateDue != '') {
+            /* override defualt date due */
+            $this->_addFixedOption($this->_datestamp($nbDateDue), 18);
+        } else {
+            /* send a blank date due to allow ACS to use default date due computed for item */
+            $this->_addFixedOption('', 18);
+        }
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AA',$this->patron);
+        $this->_addVarOption('AB',$item);
+        $this->_addVarOption('AC',$this->AC);
+        $this->_addVarOption('CH',$itmProp, true);
+        $this->_addVarOption('AD',$this->patronpwd, true);
+        $this->_addVarOption('BO',$fee, true); /* Y or N */
+        $this->_addVarOption('BI',$cancel, true); /* Y or N */
+        
+        return $this->_returnMessage();
     }
     
-    function msgCheckin($item, $itmReturnDate, $itmLocation = '', $itmProp = '', $noBlock='N', $cancel) {
+    function msgCheckin($item, $itmReturnDate, $itmLocation = '', $itmProp = '', $noBlock='N', $cancel = '') {
     /* Checkin an item (09) - untested */
         if ($itmLocation == '') {
-            /* If no location is specified, assume the defualt location of the SC */
+            /* If no location is specified, assume the defualt location of the SC, behavior suggested by spec*/
             $itmLocation = $this->scLocation;
         } 
-        $message = sprintf( "09%1s%18s%18s|AP%s|AO%s|AB%s|AC%s|CH%s|BI%1s|AY%1sAZ",
-        $noBlock,
-        $this->_datestamp(),	
-        $itmReturnDate,
-        $this->AP,
-        $this->AO,
-        $item,
-        $this->AC,			
-        $itmProp,
-        $this->cancel,
-        $this->_getseqnum()			
-        );
 
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+        $this->_newMessage('09');
+        $this->_addFixedOption($noBlock, 1);
+        $this->_addFixedOption($this->_datestamp(), 18);
+        $this->_addFixedOption($this->_datestamp($itmReturnDate), 18);
+        $this->_addVarOption('AP',$itmLocation);
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AB',$item);
+        $this->_addVarOption('AC',$this->AC);
+        $this->_addVarOption('CH',$itmProp, true);
+        $this->_addVarOption('BI',$cancel, true); /* Y or N */
+        
+        return $this->_returnMessage();
     }
 
     function msgBlockPatron($message, $retained='N') {
         /* Blocks a patron, and responds with a patron status response  (01) - untested */
-        $message = sprintf("01%1s%18s|AO%s|AL%s|AA%s|AC%s|AY%1sAZ",
-        $retained, /* Y if card has been retained */
-        $this->_datestamp(),
-        $this->AO,
-        $message,
-        $this->AA,
-        $this->AC,
-        $this->_getseqnum()
-        );
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+        $this->_newMessage('01');
+        $this->_addFixedOption($retained, 1); /* Y if card has been retained */
+        $this->_addFixedOption($this->_datestamp(), 18);
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AL',$message);
+        $this->_addVarOption('AA',$this->AA);
+        $this->_addVarOption('AC',$this->AC);
+        
+        return $this->_returnMessage();
     }
     
     function msgSCStatus($status = 0, $width = 80, $version = 2) {
-    /* selfcheck status message, this should be sent immediatly after login */
+    /* selfcheck status message, this should be sent immediatly after login  - untested */
     /* status codes, from the spec:
             * 0 SC unit is OK
             * 1 SC printer is out of paper
@@ -189,37 +189,32 @@ class sip2 {
             $this->_debugmsg( "SIP2: Invalid status passed to msgSCStatus" );
             return false;
         }    
-        $message = sprintf( "99%1s%3s%03.2fAY%1s|AZ",
-        $status,
-        $width,
-        $version,
-        $this->_getseqnum()
-        );
-
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+        $this->_newMessage('99');
+        $this->_addFixedOption($status, 1);
+        $this->_addFixedOption($width, 3);
+        $this->_addFixedOption(sprintf("%03.2f",$version), 4);
+        return $this->_returnMessage();
     }
 
     function msgRequestACSResend () {
         /* Used to request a resend due to CRC mismatch - No sequence number is used */
-        $message = sprintf("97AZ");
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+        $this->_newMessage('97');
+        return $this->_returnMessage(false);
     }
 
     function msgLogin($sipLogin, $sipPassword) {
     /* Login (93) - untested */
-        $message = sprintf("93%1s%1sCN%s|CO%s|CP%s|AY%1sAZ",
-        $this->UIDalgorithm,
-        $this->PWDalgorithm,
-        $sipLogin,
-        $sipPassword,
-        $this->scLocation,
-        $this->_getseqnum()
-        );
-        
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+        $this->_newMessage('93');
+        $this->_addFixedOption($this->UIDalgorithm, 1);
+        $this->_addFixedOption($this->PWDalgorithm, 1);
+        $this->_addVarOption('CN',$sipLogin);
+        $this->_addVarOption('CO',$sipPassword);
+        $this->_addVarOption('CP',$this->scLocation, true);
+        return $this->_returnMessage();
+
     }
 
-    function msgPatronInformation($type, $start="1", $end="5") {
+    function msgPatronInformation($type, $start = '1', $end = '5') {
 
     /* 
            * According to the specification:
@@ -235,51 +230,68 @@ class sip2 {
         $summary['unavail']  = '     Y';
         
         /* Request patron information */
-        $message = sprintf("63%3s%18s%-10sAO%s|AA%s|AC%s|AD%s|BP%05d|BQ%05d|AY%1sAZ",
-        $this->language,
-        $this->_datestamp(),		
-        $summary[$type],
-        $this->AO,
-        $this->patron,
-        $this->AC,
-        $this->patronpwd,
-        $start,
-        $end,
-        $this->_getseqnum()
-        );
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+        $this->_newMessage('63');
+        $this->_addFixedOption($this->language, 3);
+        $this->_addFixedOption($this->_datestamp(), 18);
+        $this->_addFixedOption(sprintf("%-10s",$summary[$type]), 10);
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AA',$this->patron);
+        $this->_addVarOption('AC',$this->AC, true);
+        $this->_addVarOption('AD',$this->patronpwd, true);
+        $this->_addVarOption('BP',$start, true); /* old function version used padded 5 digits, not sure why */
+        $this->_addVarOption('BQ',$end, true); /* old function version used padded 5 digits, not sure why */
+        return $this->_returnMessage();
     }
 
     function msgEndPatronSession() {
-    /*  End Patron Session, shoudl be sent before switching to a new patron. (35) - untested */
-        $message = sprintf("35%18sAO%s|AA%s|AC%s|AD%s|AY%1sAZ",
-        $this->_datestamp(),
-        $this->AO,
-        $this->patron,
-        $this->AC,
-        $this->patronpwd,
-        $this->_getseqnum()
-        );
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+    /*  End Patron Session, should be sent before switching to a new patron. (35) - untested */
+
+        $this->_newMessage('35');
+        $this->_addFixedOption($this->_datestamp(), 18);
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AA',$this->patron);
+        $this->_addVarOption('AC',$this->AC, true);
+        $this->_addVarOption('AD',$this->patronpwd, true);
+        return $this->_returnMessage();
     }
     
     /* Fee paid function should go here */
 
     function msgItemInformation($item) {
-        $message = sprintf( "17%18sAO%s|AB%s|AC%s|AY%1sAZ",
-        $this->_datestamp(),		
-        $this->AO,
-        $item,
-        $this->AC,			
-        $this->_getseqnum()			
-        );
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+
+        $this->_newMessage('17');
+        $this->_addFixedOption($this->_datestamp(), 18);
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AB',$item);
+        $this->_addVarOption('AC',$this->AC, true);
+        return $this->_returnMessage();
         
     }
 
-    /* Item status update  function goes here */
+    function msgItemStatus ($item, $itmProp = '') {
+        /* Item status update function (19) - untested  */
+
+        $this->_newMessage('19');
+        $this->_addFixedOption($this->_datestamp(), 18);
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AB',$item);
+        $this->_addVarOption('AC',$this->AC, true);
+        $this->_addVarOption('CH',$itmProp);
+        return $this->_returnMessage();
+    }
     
-    /* Patron Enable function goes here */
+    function msgPatronEnable () {
+        /* Patron Enable function (25) - untested */
+        /*  This message can be used by the SC to re-enable canceled patrons. It should only be used for system testing and validation. */
+        $this->_newMessage('25');
+        $this->_addFixedOption($this->_datestamp(), 18);
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AA',$this->patron);
+        $this->_addVarOption('AC',$this->AC, true);
+        $this->_addVarOption('AD',$this->patronpwd, true);
+        return $this->_returnMessage();
+
+    }
     
     function msgHold($mode, $expDate='', $holdtype, $item, $title, $fee='N') {
         /* mode validity check */
@@ -321,11 +333,11 @@ class sip2 {
         $fee, /* Y when user has agreed to a fee notice */
         $this->_getseqnum()
         );
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+        return $message . $this->_crc($message) . $this->msgTerminator;
 
     }
 
-    function msgRenew($item, $title, $nbDueDate='', $itmProp ='', $fee='N', $noBlock='N') {
+    function msgRenew($item, $title, $nbDueDate = '', $itmProp = '', $fee= 'N', $noBlock = 'N') {
         $message = sprintf( "29%1s%1s%18s%18sAO%s|AA%s|AD%s|AB%s|AJ%s|AC%s|CH%s|BO%1s|AY%1sAZ",
         "N", /* 3rd party allowed */
         $noBlock, /* No Block */
@@ -342,7 +354,7 @@ class sip2 {
         $this->_getseqnum()				
         
         );
-        return $message . $this->_crc($message) . $this->MsgTerminator;
+        return $message . $this->_crc($message) . $this->msgTerminator;
 
     }
 
@@ -435,10 +447,10 @@ class sip2 {
         $terminator = '';
 
         
-        $this->_debugmsg( "SIP2: Sending SIP2 request...");
+        $this->_debugmsg('SIP2: Sending SIP2 request...');
         socket_write($this->socket, $message, strlen($message));
 
-        $this->_debugmsg( "SIP2: Request Sent, Reading response");
+        $this->_debugmsg('SIP2: Request Sent, Reading response');
 
         while ($terminator != "\x0D") {
             $nr = socket_recv($this->socket,$terminator,1,0);
@@ -507,7 +519,7 @@ class sip2 {
     }
 
     /* Core local utility functions */	
-    function _datestamp() {
+    function _datestamp($timestamp = '') {
         /* generate a SIP2 compatable datestamp */
         /* From the spec:
          * YYYYMMDDZZZZHHMMSS. 
@@ -518,7 +530,13 @@ class sip2 {
          * should be put in the last (right hand) position of the ZZZZ field to represent Atlantic Standard Time. 
          * When possible local time is the preferred format.
          */
-        return date('Ymd    His');
+        if ($timestamp != '') {
+            /* Generate a proper date time from the date provided */
+            return date('Ymd    His', $timestamp);
+        } else {
+            /* Current Date/Time */
+            return date('Ymd    His');
+        }
     }
 
     function _parsevariabledata($response, $start) {
@@ -583,6 +601,49 @@ class sip2 {
             return false;
         }
     }
+    
+    function _newMessage($code) {
+    /* resets the msgBuild variable to the value of $code, and clears the flag for fixed messages */
+        $this->noFixed  = false;
+        $this->msgBuild = $code;
+    }
+    
+    function _addFixedOption($value, $len) {
+    /* adds afixed length option to the msgBuild IF no variable options have been added. */
+        if ( $this->noFixed ) {
+            return false;
+        } else {
+            $this->msgBuild .= sprintf("%{$len}s", substr($value,0,$len));
+            return true;
+        }
+    }
+    
+    function _addVarOption($field, $value, $optional = false) {
+    /* adds a varaiable length option to the message, and also prevents adding addtional fixed fields */
+        if ($optional == true && $value == '') {
+            /* skipped */
+            $this->_debugmsg( "SIP2: Skipping optional field {$field}");
+        } else {
+            $this->noFixed  = true; /* no more fixed for this message */
+            $this->msgBuild .= $field . $value . $this->fldTerminator;
+        }
+        return true;
+    }
+    
+    function _returnMessage($withSeq = true, $withCrc = true) {
+    /* Finalizes the message and returns it.  Message will remain in msgBuild until newMessage is called */
+        if ($withSeq) {
+            $this->msgBuild .= 'AY' . $this->_getseqnum();
+        }
+        if ($withCrc) {
+            $this->msgBuild .= 'AZ';
+            $this->msgBuild .= $this->_crc($this->msgBuild);
+        }
+        $this->msgBuild .= $this->msgTerminator;
+
+        return $this->msgBuild;
+    }
+    
 }
 
 ?>
