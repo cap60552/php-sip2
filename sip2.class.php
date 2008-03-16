@@ -293,7 +293,7 @@ class sip2 {
 
     }
     
-    function msgHold($mode, $expDate='', $holdtype, $item, $title, $fee='N') {
+    function msgHold($mode, $expDate = '', $holdtype = '', $item = '', $title = '', $fee='N', $pkupLocation = '') {
         /* mode validity check */
         /* 
          * - remove hold
@@ -306,7 +306,7 @@ class sip2 {
             return false;
         }
         
-        if ($holdtype < 1 || $holdtype > 9) {
+        if ($holdtype != '' && ($holdtype < 1 || $holdtype > 9)) {
         /*
         * Valid hold types range from 1 - 9 
         * 1   other
@@ -317,48 +317,64 @@ class sip2 {
             $this->_debugmsg( "SIP2: Invalid hold type code: {$holdtype}");
             return false;
         }
+
+        $this->_newMessage('15');
+        $this->_addFixedOption($mode, 1);
+        $this->_addFixedOption($this->_datestamp(), 18);
+        if ($expDate != '') {
+            /* hold expiration date,  due to the use of the datestamp function, we have to check here for empty value. when datestamp is passed an empty value it will generate a current datestamp */
+            $this->_addVarOption('BW', $this->_datestamp($expDate), true); /*spec says this is fixed field, but it behaves like a var field and is optional... */
+        }
+        $this->_addVarOption('BS',$pkupLocation, true);
+        $this->_addVarOption('BY',$holdtype, true);
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AA',$this->patron);
+        $this->_addVarOption('AD',$this->patronpwd, true);
+        $this->_addVarOption('AB',$item, true);
+        $this->_addVarOption('AJ',$title, true);
+        $this->_addVarOption('AC',$this->AC, true);
+        $this->_addVarOption('BO',$fee, true); /* Y when user has agreed to a fee notice */
         
-        $message = sprintf("15%1s%18sBW%18s|BS%s|BY%1s|AO%s|AA%s|AD%s|AB%s|AJ%s|AC%s|BO%s|AY%1sAZ",
-        $mode,
-        $this->_datestamp(),
-        $expDate,
-        $this->scLocation,
-        $holdtype,
-        $this->AO,
-        $this->patron,
-        $this->patronpwd,
-        $item,
-        $title,
-        $this->AC,
-        $fee, /* Y when user has agreed to a fee notice */
-        $this->_getseqnum()
-        );
-        return $message . $this->_crc($message) . $this->msgTerminator;
+        return $this->_returnMessage();
 
     }
 
-    function msgRenew($item, $title, $nbDueDate = '', $itmProp = '', $fee= 'N', $noBlock = 'N') {
-        $message = sprintf( "29%1s%1s%18s%18sAO%s|AA%s|AD%s|AB%s|AJ%s|AC%s|CH%s|BO%1s|AY%1sAZ",
-        "N", /* 3rd party allowed */
-        $noBlock, /* No Block */
-        $this->_datestamp(),
-        $nbDueDate,
-        $this->AO,
-        $this->patron,
-        $this->patronpwd,
-        $item,
-        $title,
-        $this->AC, /*Terminal Password */
-        $itmProp,
-        $fee,
-        $this->_getseqnum()				
+    function msgRenew($item = '', $title = '', $nbDueDate = '', $itmProp = '', $fee= 'N', $noBlock = 'N', $thirdParty = 'N') {
+        /* renew a single item (29) - untested */
+        $this->_newMessage('29');
+        $this->_addFixedOption($thirdParty, 1);
+        $this->_addFixedOption($noBlock, 1);
+        $this->_addFixedOption($this->_datestamp(), 18);
+        if ($nbDateDue != '') {
+            /* override defualt date due */
+            $this->_addFixedOption($this->_datestamp($nbDateDue), 18);
+        } else {
+            /* send a blank date due to allow ACS to use default date due computed for item */
+            $this->_addFixedOption('', 18);
+        }
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AA',$this->patron);
+        $this->_addVarOption('AD',$this->patronpwd, true);
+        $this->_addVarOption('AB',$item, true);
+        $this->_addVarOption('AJ',$title, true);
+        $this->_addVarOption('AC',$this->AC, true);
+        $this->_addVarOption('CH',$itmProp, true);
+        $this->_addVarOption('BO',$fee, true); /* Y or N */
         
-        );
-        return $message . $this->_crc($message) . $this->msgTerminator;
-
+        return $this->_returnMessage();
     }
 
-    /* Renew All message function goes here (65) */
+    function msgRenewAll($fee = 'N') {
+        /* renew all items for a patron (65) - untested */
+        $this->_newMessage('65');
+        $this->_addVarOption('AO',$this->AO);
+        $this->_addVarOption('AA',$this->patron);
+        $this->_addVarOption('AD',$this->patronpwd, true);
+        $this->_addVarOption('AC',$this->AC, true);
+        $this->_addVarOption('BO',$fee, true); /* Y or N */
+
+        return $this->_returnMessage();
+    }
     
     function parseRenewResponse ($response) {
         /* Response Example:  300NUU20080228    222232AOWOHLERS|AAX00000241|ABM02400028262|AJFolksongs of Britain and Ireland|AH5/23/2008,23:59|CH|AFOverride required to exceed renewal limit.|AY1AZCDA5 */
