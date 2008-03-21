@@ -86,8 +86,8 @@ class sip2 {
     public $debug        = false;
     
     /* Private variables for building messages */
-    private $AO = 'WohlersSIP';
-    private $AN = 'SIPCHK';
+    public $AO = 'WohlersSIP';
+    public $AN = 'SIPCHK';
     
     /* Private variable to hold socket connection */
     private $socket;
@@ -429,7 +429,8 @@ class sip2 {
         );    
 
         $result['variable'] = $this->_parsevariabledata($response, 37);
-    }
+		return $result;
+	}
 
     function parseCheckoutResponse($response) {
         $result['fixed'] = 
@@ -442,7 +443,9 @@ class sip2 {
         );
         
         $result['variable'] = $this->_parsevariabledata($response, 24);
-    }
+		return $result;
+
+	}
 
     function parseCheckinResponse($response) {
         $result['fixed'] = 
@@ -455,7 +458,9 @@ class sip2 {
         );
         
         $result['variable'] = $this->_parsevariabledata($response, 24);
-    }
+		return $result;
+
+	}
 
     function parseACSStatusResponse($response) {
         $result['fixed'] = 
