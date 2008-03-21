@@ -463,16 +463,18 @@ class sip2 {
         'Online'            => substr($response, 2, 1),
         'Checkin'           => substr($response, 3, 1),  /* is Checkin by the SC allowed ?*/
         'Checkout'          => substr($response, 4, 1),  /* is Checkout by the SC allowed ?*/
-        'PatronUpdate'      => substr($response, 5, 1),  /* is patron status updating by the SC allowed ? (status update ok)*/
-        'Offline'           => substr($response, 6, 1),
-        'Timeout'           => substr($response, 7, 3),
-        'Retries'           => substr($response, 10, 3), 
-        'TransactionDate'   => substr($response, 13, 18),
-        'Protocol'          => substr($response, 31, 4),
+		'Renewal'			=> substr($response, 5, 1),  /* renewal allowed? */
+        'PatronUpdate'      => substr($response, 6, 1),  /* is patron status updating by the SC allowed ? (status update ok)*/
+        'Offline'           => substr($response, 7, 1),
+        'Timeout'           => substr($response, 8, 3),
+        'Retries'           => substr($response, 11, 3), 
+        'TransactionDate'   => substr($response, 14, 18),
+        'Protocol'          => substr($response, 32, 4),
         );
         
-        $result['variable'] = $this->_parsevariabledata($response, 35);
-    }
+        $result['variable'] = $this->_parsevariabledata($response, 36);
+		return $result;
+	}
 
     function parseLoginResponse($response) {
         $result['fixed'] = 
