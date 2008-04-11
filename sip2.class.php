@@ -17,8 +17,8 @@
 */
 
 /**
-*  2008.03.15
-*  There is a lot to do yet.  While this version does indeed work, not all messages have been tested.
+*  2008.04.11
+*  Encorported a bug fix submitted by Bob Wicksall
 *  
 *  TODO
 *   - Clean up variable names, check for consistancy
@@ -109,8 +109,8 @@ class sip2 {
         $this->_addFixedOption($this->_datestamp(), 18);
         $this->_addVarOption('AO',$this->AO);
         $this->_addVarOption('AA',$this->patron);
-        $this->_addVarOption('AC',$this->AC, true);
-        $this->_addVarOption('AD',$this->patronpwd, true);
+        $this->_addVarOption('AC',$this->AC);
+        $this->_addVarOption('AD',$this->patronpwd);
         return $this->_returnMessage();     
         }
     
