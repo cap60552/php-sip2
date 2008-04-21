@@ -55,7 +55,8 @@
 *    
 */
 
-class sip2 {
+class sip2 
+{
 
     /* Public variables for configuration */
     public $hostname;
@@ -102,7 +103,8 @@ class sip2 {
     private $msgBuild = '';
     private $noFixed = false;
     
-    function msgPatronStatusRequest() {
+    function msgPatronStatusRequest() 
+    {
         /* Server Response: Patron Status Response message. */
         $this->_newMessage('23');
         $this->_addFixedOption($this->language, 3);
@@ -112,10 +114,11 @@ class sip2 {
         $this->_addVarOption('AC',$this->AC);
         $this->_addVarOption('AD',$this->patronpwd);
         return $this->_returnMessage();     
-        }
+    }
     
-    function msgCheckout($item, $nbDateDue ='', $scRenewal='N', $itmProp ='', $fee='N', $noBlock='N', $cancel='N') {
-    /* Checkout an item  (11) - untested */
+    function msgCheckout($item, $nbDateDue ='', $scRenewal='N', $itmProp ='', $fee='N', $noBlock='N', $cancel='N') 
+    {
+        /* Checkout an item  (11) - untested */
         $this->_newMessage('11');
         $this->_addFixedOption($scRenewal, 1);
         $this->_addFixedOption($noBlock, 1);
@@ -139,8 +142,9 @@ class sip2 {
         return $this->_returnMessage();
     }
     
-    function msgCheckin($item, $itmReturnDate, $itmLocation = '', $itmProp = '', $noBlock='N', $cancel = '') {
-    /* Checkin an item (09) - untested */
+    function msgCheckin($item, $itmReturnDate, $itmLocation = '', $itmProp = '', $noBlock='N', $cancel = '') 
+    {
+        /* Checkin an item (09) - untested */
         if ($itmLocation == '') {
             /* If no location is specified, assume the defualt location of the SC, behavior suggested by spec*/
             $itmLocation = $this->scLocation;
@@ -160,7 +164,8 @@ class sip2 {
         return $this->_returnMessage();
     }
 
-    function msgBlockPatron($message, $retained='N') {
+    function msgBlockPatron($message, $retained='N') 
+    {
         /* Blocks a patron, and responds with a patron status response  (01) - untested */
         $this->_newMessage('01');
         $this->_addFixedOption($retained, 1); /* Y if card has been retained */
@@ -173,9 +178,10 @@ class sip2 {
         return $this->_returnMessage();
     }
     
-    function msgSCStatus($status = 0, $width = 80, $version = 2) {
-    /* selfcheck status message, this should be sent immediatly after login  - untested */
-    /* status codes, from the spec:
+    function msgSCStatus($status = 0, $width = 80, $version = 2) 
+    {
+        /* selfcheck status message, this should be sent immediatly after login  - untested */
+        /* status codes, from the spec:
             * 0 SC unit is OK
             * 1 SC printer is out of paper
             * 2 SC is about to shut down
@@ -195,14 +201,16 @@ class sip2 {
         return $this->_returnMessage();
     }
 
-    function msgRequestACSResend () {
+    function msgRequestACSResend () 
+    {
         /* Used to request a resend due to CRC mismatch - No sequence number is used */
         $this->_newMessage('97');
         return $this->_returnMessage(false);
     }
 
-    function msgLogin($sipLogin, $sipPassword) {
-    /* Login (93) - untested */
+    function msgLogin($sipLogin, $sipPassword) 
+    {
+        /* Login (93) - untested */
         $this->_newMessage('93');
         $this->_addFixedOption($this->UIDalgorithm, 1);
         $this->_addFixedOption($this->PWDalgorithm, 1);
@@ -213,13 +221,14 @@ class sip2 {
 
     }
 
-    function msgPatronInformation($type, $start = '1', $end = '5') {
+    function msgPatronInformation($type, $start = '1', $end = '5') 
+    {
 
-    /* 
-           * According to the specification:
-           * Only one category of items should be  requested at a time, i.e. it would take 6 of these messages, 
-           * each with a different position set to Y, to get all the detailed information about a patron's items.
-           */
+        /* 
+        * According to the specification:
+        * Only one category of items should be  requested at a time, i.e. it would take 6 of these messages, 
+        * each with a different position set to Y, to get all the detailed information about a patron's items.
+        */
         $summary['none']     = '      ';
         $summary['hold']     = 'Y     ';
         $summary['overdue']  = ' Y    ';
@@ -242,8 +251,9 @@ class sip2 {
         return $this->_returnMessage();
     }
 
-    function msgEndPatronSession() {
-    /*  End Patron Session, should be sent before switching to a new patron. (35) - untested */
+    function msgEndPatronSession() 
+    {
+        /*  End Patron Session, should be sent before switching to a new patron. (35) - untested */
 
         $this->_newMessage('35');
         $this->_addFixedOption($this->_datestamp(), 18);
@@ -255,24 +265,25 @@ class sip2 {
     }
     
     /* Fee paid function should go here */
-    function msgFeePaid ($feeType, $pmtType, $pmtAmount, $curType = 'USD', $feeId = '', $transId = '') {
-    /* Fee payment function (37) - untested */
-            /* Fee Types: */
-            /* 01 other/unknown */
-            /* 02 administrative */
-            /* 03 damage */
-            /* 04 overdue */
-            /* 05 processing */
-            /* 06 rental*/
-            /* 07 replacement */
-            /* 08 computer access charge */
-            /* 09 hold fee */
+    function msgFeePaid ($feeType, $pmtType, $pmtAmount, $curType = 'USD', $feeId = '', $transId = '') 
+    {
+        /* Fee payment function (37) - untested */
+        /* Fee Types: */
+        /* 01 other/unknown */
+        /* 02 administrative */
+        /* 03 damage */
+        /* 04 overdue */
+        /* 05 processing */
+        /* 06 rental*/
+        /* 07 replacement */
+        /* 08 computer access charge */
+        /* 09 hold fee */
 
-            /* Value Payment Type */
-            /* 00   cash */
-            /* 01   VISA */
-            /* 02   credit card */
-    
+        /* Value Payment Type */
+        /* 00   cash */
+        /* 01   VISA */
+        /* 02   credit card */
+        
         if (!is_numeric($feeType) || $feeType > 99 || $feeType < 1) {
             /* not a valid fee type - exit */
             $this->_debugmsg( "SIP2: (msgFeePaid) Invalid fee type: {$feeType}");
@@ -297,11 +308,12 @@ class sip2 {
         $this->_addVarOption('AD',$this->patronpwd, true);
         $this->_addVarOption('CG',$feeId, true);
         $this->_addVarOption('BK',$transId, true);
-       
+        
         return $this->_returnMessage();
     }
     
-    function msgItemInformation($item) {
+    function msgItemInformation($item) 
+    {
 
         $this->_newMessage('17');
         $this->_addFixedOption($this->_datestamp(), 18);
@@ -312,7 +324,8 @@ class sip2 {
         
     }
 
-    function msgItemStatus ($item, $itmProp = '') {
+    function msgItemStatus ($item, $itmProp = '') 
+    {
         /* Item status update function (19) - untested  */
 
         $this->_newMessage('19');
@@ -324,7 +337,8 @@ class sip2 {
         return $this->_returnMessage();
     }
     
-    function msgPatronEnable () {
+    function msgPatronEnable () 
+    {
         /* Patron Enable function (25) - untested */
         /*  This message can be used by the SC to re-enable canceled patrons. It should only be used for system testing and validation. */
         $this->_newMessage('25');
@@ -337,13 +351,14 @@ class sip2 {
 
     }
     
-    function msgHold($mode, $expDate = '', $holdtype = '', $item = '', $title = '', $fee='N', $pkupLocation = '') {
+    function msgHold($mode, $expDate = '', $holdtype = '', $item = '', $title = '', $fee='N', $pkupLocation = '') 
+    {
         /* mode validity check */
         /* 
-         * - remove hold
-         * + place hold
-         * * modify hold
-         */
+        * - remove hold
+        * + place hold
+        * * modify hold
+        */
         if (strpos('-+*',$mode) === false) {
             /* not a valid mode - exit */
             $this->_debugmsg( "SIP2: Invalid hold mode: {$mode}");
@@ -351,7 +366,7 @@ class sip2 {
         }
         
         if ($holdtype != '' && ($holdtype < 1 || $holdtype > 9)) {
-        /*
+            /*
         * Valid hold types range from 1 - 9 
         * 1   other
         * 2   any copy of title
@@ -383,7 +398,8 @@ class sip2 {
 
     }
 
-    function msgRenew($item = '', $title = '', $nbDueDate = '', $itmProp = '', $fee= 'N', $noBlock = 'N', $thirdParty = 'N') {
+    function msgRenew($item = '', $title = '', $nbDueDate = '', $itmProp = '', $fee= 'N', $noBlock = 'N', $thirdParty = 'N') 
+    {
         /* renew a single item (29) - untested */
         $this->_newMessage('29');
         $this->_addFixedOption($thirdParty, 1);
@@ -408,7 +424,8 @@ class sip2 {
         return $this->_returnMessage();
     }
 
-    function msgRenewAll($fee = 'N') {
+    function msgRenewAll($fee = 'N') 
+    {
         /* renew all items for a patron (65) - untested */
         $this->_newMessage('65');
         $this->_addVarOption('AO',$this->AO);
@@ -420,7 +437,8 @@ class sip2 {
         return $this->_returnMessage();
     }
     
-    function parsePatronStatusResponse($response) {
+    function parsePatronStatusResponse($response) 
+    {
         $result['fixed'] = 
         array( 
         'PatronStatus'      => substr($response, 2, 14),
@@ -429,10 +447,11 @@ class sip2 {
         );    
 
         $result['variable'] = $this->_parsevariabledata($response, 37);
-		return $result;
-	}
+        return $result;
+    }
 
-    function parseCheckoutResponse($response) {
+    function parseCheckoutResponse($response) 
+    {
         $result['fixed'] = 
         array( 
         'Ok'                => substr($response,2,1),
@@ -443,11 +462,12 @@ class sip2 {
         );
         
         $result['variable'] = $this->_parsevariabledata($response, 24);
-		return $result;
+        return $result;
 
-	}
+    }
 
-    function parseCheckinResponse($response) {
+    function parseCheckinResponse($response) 
+    {
         $result['fixed'] = 
         array( 
         'Ok'                => substr($response,2,1),
@@ -458,17 +478,18 @@ class sip2 {
         );
         
         $result['variable'] = $this->_parsevariabledata($response, 24);
-		return $result;
+        return $result;
 
-	}
+    }
 
-    function parseACSStatusResponse($response) {
+    function parseACSStatusResponse($response) 
+    {
         $result['fixed'] = 
         array( 
         'Online'            => substr($response, 2, 1),
         'Checkin'           => substr($response, 3, 1),  /* is Checkin by the SC allowed ?*/
         'Checkout'          => substr($response, 4, 1),  /* is Checkout by the SC allowed ?*/
-		'Renewal'			=> substr($response, 5, 1),  /* renewal allowed? */
+        'Renewal'			=> substr($response, 5, 1),  /* renewal allowed? */
         'PatronUpdate'      => substr($response, 6, 1),  /* is patron status updating by the SC allowed ? (status update ok)*/
         'Offline'           => substr($response, 7, 1),
         'Timeout'           => substr($response, 8, 3),
@@ -478,10 +499,11 @@ class sip2 {
         );
         
         $result['variable'] = $this->_parsevariabledata($response, 36);
-		return $result;
-	}
+        return $result;
+    }
 
-    function parseLoginResponse($response) {
+    function parseLoginResponse($response) 
+    {
         $result['fixed'] = 
         array( 
         'Ok'                => substr($response, 2, 1),
@@ -490,7 +512,8 @@ class sip2 {
         return $result;
     }
 
-    function parsePatronInfoResponse($response) {
+    function parsePatronInfoResponse($response) 
+    {
         
         $result['fixed'] = 
         array( 
@@ -509,7 +532,8 @@ class sip2 {
         return $result;
     }
 
-    function parseEndSessionResponse($response) {
+    function parseEndSessionResponse($response) 
+    {
         /*   Response example:  36Y20080228 145537AOWOHLERS|AAX00000000|AY9AZF474   */
         
         $result['fixed'] = 
@@ -524,7 +548,8 @@ class sip2 {
         return $result;
     }
     
-    function parseFeePaidResponse($response) {
+    function parseFeePaidResponse($response) 
+    {
         $result['fixed'] = 
         array( 
         'PaymentAccepted'   => substr($response, 2, 1),
@@ -536,7 +561,8 @@ class sip2 {
         
     }
 
-    function parseItemInfoResponse($response) {
+    function parseItemInfoResponse($response) 
+    {
         $result['fixed'] = 
         array( 
         'CirculationStatus' => intval (substr($response, 2, 2)),
@@ -550,7 +576,8 @@ class sip2 {
         return $result;
     }
 
-    function parseItemStatusResponse($response) {
+    function parseItemStatusResponse($response) 
+    {
         $result['fixed'] = 
         array( 
         'PropertiesOk'      => substr($response, 2, 1),
@@ -562,7 +589,8 @@ class sip2 {
         
     }
 
-    function parsePatronEnableResponse($response) {
+    function parsePatronEnableResponse($response) 
+    {
         $result['fixed'] = 
         array( 
         'PatronStatus'      => substr($response, 2, 14),
@@ -575,7 +603,8 @@ class sip2 {
         
     }
 
-    function parseHoldResponse($response) {
+    function parseHoldResponse($response) 
+    {
 
         $result['fixed'] = 
         array( 
@@ -592,7 +621,8 @@ class sip2 {
     }	
     
     
-    function parseRenewResponse($response) {
+    function parseRenewResponse($response) 
+    {
         /* Response Example:  300NUU20080228    222232AOWOHLERS|AAX00000241|ABM02400028262|AJFolksongs of Britain and Ireland|AH5/23/2008,23:59|CH|AFOverride required to exceed renewal limit.|AY1AZCDA5 */
         $result['fixed'] = 
         array( 
@@ -609,7 +639,8 @@ class sip2 {
         return $result;
     }
     
-    function parseRenewAllResponse($response) {
+    function parseRenewAllResponse($response) 
+    {
         $result['fixed'] = 
         array( 
         'Ok'                => substr($response, 2, 1),
@@ -627,7 +658,8 @@ class sip2 {
 
     
     
-    function get_message ($message) {
+    function get_message ($message) 
+    {
         /* sends the current message, and gets the response */
         $result     = '';
         $terminator = '';
@@ -667,7 +699,8 @@ class sip2 {
         return $result;
     }	
 
-    function connect() {
+    function connect() 
+    {
 
         /* Socket Communications  */
         $this->_debugmsg( "SIP2: --- BEGIN SIP communication ---");  
@@ -699,23 +732,25 @@ class sip2 {
         
     }	
     
-    function disconnect () {
+    function disconnect () 
+    {
         /*  Close the socket */
         socket_close($this->socket);
     }
 
     /* Core local utility functions */	
-    function _datestamp($timestamp = '') {
+    function _datestamp($timestamp = '') 
+    {
         /* generate a SIP2 compatable datestamp */
         /* From the spec:
-         * YYYYMMDDZZZZHHMMSS. 
-         * All dates and times are expressed according to the ANSI standard X3.30 for date and X3.43 for time. 
-         * The ZZZZ field should contain blanks (code $20) to represent local time. To represent universal time, 
-         *  a Z character(code $5A) should be put in the last (right hand) position of the ZZZZ field. 
-         * To represent other time zones the appropriate character should be used; a Q character (code $51) 
-         * should be put in the last (right hand) position of the ZZZZ field to represent Atlantic Standard Time. 
-         * When possible local time is the preferred format.
-         */
+        * YYYYMMDDZZZZHHMMSS. 
+        * All dates and times are expressed according to the ANSI standard X3.30 for date and X3.43 for time. 
+        * The ZZZZ field should contain blanks (code $20) to represent local time. To represent universal time, 
+        *  a Z character(code $5A) should be put in the last (right hand) position of the ZZZZ field. 
+        * To represent other time zones the appropriate character should be used; a Q character (code $51) 
+        * should be put in the last (right hand) position of the ZZZZ field to represent Atlantic Standard Time. 
+        * When possible local time is the preferred format.
+        */
         if ($timestamp != '') {
             /* Generate a proper date time from the date provided */
             return date('Ymd    His', $timestamp);
@@ -725,7 +760,8 @@ class sip2 {
         }
     }
 
-    function _parsevariabledata($response, $start) {
+    function _parsevariabledata($response, $start) 
+    {
 
         $result = array();
         $result['Raw'] = explode("|", substr($response,$start,-7));
@@ -733,8 +769,8 @@ class sip2 {
             $field = substr($item,0,2);
             $value = substr($item,2);
             /* SD returns some odd values on ocassion, Unable to locate the purpose in spec, so I strip from 
-             * the parsed array. Orig values will remain in ['raw'] element
-             */
+            * the parsed array. Orig values will remain in ['raw'] element
+            */
             $clean = trim($value, "\x00..\x1F");
             if (trim($clean) <> '') {
                 $result[$field][] = $clean;
@@ -745,7 +781,8 @@ class sip2 {
         return ($result);
     }
 
-    function _crc($buf) {
+    function _crc($buf) 
+    {
         /* Calculate CRC  */
         $sum = 0;
 
@@ -760,7 +797,8 @@ class sip2 {
         return substr(sprintf ("%4X", $crc), -4, 4);
     } /* end crc */	
 
-    function _getseqnum() {
+    function _getseqnum() 
+    {
         /* Get a sequence number for the AY field */
         /* valid numbers range 0-9 */
         $this->seq++;
@@ -769,15 +807,17 @@ class sip2 {
         }
         return ($this->seq);
     }
-        
-    function _debugmsg($message) {
+    
+    function _debugmsg($message) 
+    {
         /* custom debug function,  why repeat the check for the debug flag in code... */
         if ($this->debug) { 
             trigger_error( $message, E_USER_NOTICE); 
         }	
     }
     
-    function _check_crc($message) {
+    function _check_crc($message) 
+    {
         /* test the recieved message's CRC by generating our own CRC from the message */
         $test = preg_split('/(.{4})$/',trim($message),2,PREG_SPLIT_DELIM_CAPTURE);
 
@@ -788,14 +828,16 @@ class sip2 {
         }
     }
     
-    function _newMessage($code) {
-    /* resets the msgBuild variable to the value of $code, and clears the flag for fixed messages */
+    function _newMessage($code) 
+    {
+        /* resets the msgBuild variable to the value of $code, and clears the flag for fixed messages */
         $this->noFixed  = false;
         $this->msgBuild = $code;
     }
     
-    function _addFixedOption($value, $len) {
-    /* adds afixed length option to the msgBuild IF no variable options have been added. */
+    function _addFixedOption($value, $len) 
+    {
+        /* adds afixed length option to the msgBuild IF no variable options have been added. */
         if ( $this->noFixed ) {
             return false;
         } else {
@@ -804,8 +846,9 @@ class sip2 {
         }
     }
     
-    function _addVarOption($field, $value, $optional = false) {
-    /* adds a varaiable length option to the message, and also prevents adding addtional fixed fields */
+    function _addVarOption($field, $value, $optional = false) 
+    {
+        /* adds a varaiable length option to the message, and also prevents adding addtional fixed fields */
         if ($optional == true && $value == '') {
             /* skipped */
             $this->_debugmsg( "SIP2: Skipping optional field {$field}");
@@ -816,8 +859,9 @@ class sip2 {
         return true;
     }
     
-    function _returnMessage($withSeq = true, $withCrc = true) {
-    /* Finalizes the message and returns it.  Message will remain in msgBuild until newMessage is called */
+    function _returnMessage($withSeq = true, $withCrc = true) 
+    {
+        /* Finalizes the message and returns it.  Message will remain in msgBuild until newMessage is called */
         if ($withSeq) {
             $this->msgBuild .= 'AY' . $this->_getseqnum();
         }
