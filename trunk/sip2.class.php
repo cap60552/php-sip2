@@ -17,6 +17,9 @@
 */
 
 /**
+*  2010.10.08
+*  Fixed a potential endless loop condition if a socket lost connection in the middle of a transaction.
+*
 *  2008.04.11
 *  Encorported a bug fix submitted by Bob Wicksall
 *  
@@ -670,7 +673,7 @@ class sip2
 
         $this->_debugmsg('SIP2: Request Sent, Reading response');
 
-        while ($terminator != "\x0D") {
+        while ($terminator != "\x0D" && $nr !== FALSE) {
             $nr = socket_recv($this->socket,$terminator,1,0);
             $result = $result . $terminator;
         }
