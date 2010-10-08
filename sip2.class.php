@@ -401,7 +401,7 @@ class sip2
 
     }
 
-    function msgRenew($item = '', $title = '', $nbDueDate = '', $itmProp = '', $fee= 'N', $noBlock = 'N', $thirdParty = 'N') 
+    function msgRenew($item = '', $title = '', $nbDateDue = '', $itmProp = '', $fee= 'N', $noBlock = 'N', $thirdParty = 'N') 
     {
         /* renew a single item (29) - untested */
         $this->_newMessage('29');
@@ -409,7 +409,7 @@ class sip2
         $this->_addFixedOption($noBlock, 1);
         $this->_addFixedOption($this->_datestamp(), 18);
         if ($nbDateDue != '') {
-            /* override defualt date due */
+            /* override default date due */
             $this->_addFixedOption($this->_datestamp($nbDateDue), 18);
         } else {
             /* send a blank date due to allow ACS to use default date due computed for item */
@@ -666,7 +666,7 @@ class sip2
         /* sends the current message, and gets the response */
         $result     = '';
         $terminator = '';
-
+        $nr         = '';
         
         $this->_debugmsg('SIP2: Sending SIP2 request...');
         socket_write($this->socket, $message, strlen($message));
