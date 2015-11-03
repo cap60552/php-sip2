@@ -2,7 +2,7 @@
 /**
 * SIP2 Class
 *
-* This class provides a methoid of communicating with an Integrated
+* This class provides a method of communicating with an Integrated
 * Library System using 3M's SIP2 standard. 
 *
 * PHP version 5
@@ -12,51 +12,18 @@
 * @author     John Wohlers <john@wohlershome.net>
 * @licence    http://opensource.org/licenses/gpl-3.0.html
 * @copyright  John Wohlers <john@wohlershome.net>
-* @version    $Id$
-* @link       http://php-sip2.googlecode.com/
+* @version    1.0.1
+* @link       https://github.com/cap60552/php-sip2/
 */
 
 /**
-*  2010.10.08
-*  Fixed a potential endless loop condition if a socket lost connection in the middle of a transaction.
-*
-*  2008.04.11
-*  Encorported a bug fix submitted by Bob Wicksall
 *  
 *  TODO
-*   - Clean up variable names, check for consistancy
+*   - Clean up variable names, check for consistency
 *   - Add better i18n support, including functions to handle the SIP2 language definitions
 *
 */
 
-/**
-* General Usage:
-*    include('sip2.class.php');
-*
-*    // create object
-*    $mysip = new sip2;
-*
-*    // Set host name
-*    $mysip->hostname = 'server.example.com';
-*    $mysip->port = 6002;
-*    
-*    // Identify a patron
-*    $mysip->patron = '101010101';
-*    $mysip->patronpwd = '010101';
-*    
-*    // connect to SIP server 
-*    $result = $mysip->connect();
-*
-*    // selfcheck status mesage goes here...
-*
-*
-*    // Get Charged Items Raw response
-*    $in = $mysip->msgPatronInformation('charged');
-*
-*    // parse the raw response into an array
-*    $result = $mysip->parsePatronInfoResponse( $mysip->get_message($in) );
-*    
-*/
 
 class sip2 
 {
@@ -71,15 +38,24 @@ class sip2
     public $patron       = ''; /* AA */
     public $patronpwd    = ''; /* AD */
     
-    /*terminal password */
+    /* Terminal password */
     public $AC           = ''; /*AC */
     
     /* Maximum number of resends allowed before get_message gives up */
     public $maxretry     = 3;
     
-    /* Terminator s */
-    public $fldTerminator = '|';
+    /* Terminators 
+    *
+    * From page 15 of SPI2 v2 docs:
+    * All messages must end in a carriage return (hexadecimal 0d).
+    * 
+    * Technically $msgTerminator should be set to \r only. However some vendors mistakenly require the \r\n.  
+    *
+    * TODO: Create a function to set this, rather than exposing the variable as public.   
+    */
     public $msgTerminator = "\r\n";
+
+    public $fldTerminator = '|';
     
     /* Login Variables */
     public $UIDalgorithm = 0;   /* 0    = unencrypted, default */
@@ -89,7 +65,7 @@ class sip2
     /* Debug */
     public $debug        = false;
     
-    /* Private variables for building messages */
+    /* Public variables used for building messages */
     public $AO = 'WohlersSIP';
     public $AN = 'SIPCHK';
     
@@ -102,7 +78,7 @@ class sip2
     /* resend counter */
     private $retry = 0;
     
-    /* Workarea for building a message */
+    /* Work area for building a message */
     private $msgBuild = '';
     private $noFixed = false;
     
@@ -127,7 +103,7 @@ class sip2
         $this->_addFixedOption($noBlock, 1);
         $this->_addFixedOption($this->_datestamp(), 18);
         if ($nbDateDue != '') {
-            /* override defualt date due */
+            /* override default date due */
             $this->_addFixedOption($this->_datestamp($nbDateDue), 18);
         } else {
             /* send a blank date due to allow ACS to use default date due computed for item */
@@ -147,9 +123,9 @@ class sip2
     
     function msgCheckin($item, $itmReturnDate, $itmLocation = '', $itmProp = '', $noBlock='N', $cancel = '') 
     {
-        /* Checkin an item (09) - untested */
+        /* Check-in an item (09) - untested */
         if ($itmLocation == '') {
-            /* If no location is specified, assume the defualt location of the SC, behavior suggested by spec*/
+            /* If no location is specified, assume the default location of the SC, behaviour suggested by spec*/
             $itmLocation = $this->scLocation;
         } 
 
@@ -183,7 +159,7 @@ class sip2
     
     function msgSCStatus($status = 0, $width = 80, $version = 2) 
     {
-        /* selfcheck status message, this should be sent immediatly after login  - untested */
+        /* selfcheck status message, this should be sent immediately after login  - untested */
         /* status codes, from the spec:
             * 0 SC unit is OK
             * 1 SC printer is out of paper
@@ -304,7 +280,7 @@ class sip2
         $this->_addFixedOption(sprintf('%02d', $feeType), 2);
         $this->_addFixedOption(sprintf('%02d', $pmtType), 2);
         $this->_addFixedOption($curType, 3); 
-        $this->_addVarOption('BV',$pmtAmount); /* due to currancy format localization, it is up to the programmer to properly format their payment amount */
+        $this->_addVarOption('BV',$pmtAmount); /* due to currency format localization, it is up to the programmer to properly format their payment amount */
         $this->_addVarOption('AO',$this->AO);
         $this->_addVarOption('AA',$this->patron);
         $this->_addVarOption('AC',$this->AC, true);
@@ -343,7 +319,7 @@ class sip2
     function msgPatronEnable () 
     {
         /* Patron Enable function (25) - untested */
-        /*  This message can be used by the SC to re-enable canceled patrons. It should only be used for system testing and validation. */
+        /*  This message can be used by the SC to re-enable cancelled patrons. It should only be used for system testing and validation. */
         $this->_newMessage('25');
         $this->_addFixedOption($this->_datestamp(), 18);
         $this->_addVarOption('AO',$this->AO);
@@ -744,7 +720,7 @@ class sip2
     /* Core local utility functions */	
     function _datestamp($timestamp = '') 
     {
-        /* generate a SIP2 compatable datestamp */
+        /* generate a SIP2 compatible datestamp */
         /* From the spec:
         * YYYYMMDDZZZZHHMMSS. 
         * All dates and times are expressed according to the ANSI standard X3.30 for date and X3.43 for time. 
@@ -771,7 +747,7 @@ class sip2
         foreach ($result['Raw'] as $item) {
             $field = substr($item,0,2);
             $value = substr($item,2);
-            /* SD returns some odd values on ocassion, Unable to locate the purpose in spec, so I strip from 
+            /* SD returns some odd values on occasion, Unable to locate the purpose in spec, so I strip from 
             * the parsed array. Orig values will remain in ['raw'] element
             */
             $clean = trim($value, "\x00..\x1F");
@@ -821,7 +797,7 @@ class sip2
     
     function _check_crc($message) 
     {
-        /* test the recieved message's CRC by generating our own CRC from the message */
+        /* test the received message's CRC by generating our own CRC from the message */
         $test = preg_split('/(.{4})$/',trim($message),2,PREG_SPLIT_DELIM_CAPTURE);
 
         if ($this->_crc($test[0]) == $test[1]) {
@@ -840,7 +816,7 @@ class sip2
     
     function _addFixedOption($value, $len) 
     {
-        /* adds afixed length option to the msgBuild IF no variable options have been added. */
+        /* adds a fixed length option to the msgBuild IF no variable options have been added. */
         if ( $this->noFixed ) {
             return false;
         } else {
@@ -851,7 +827,7 @@ class sip2
     
     function _addVarOption($field, $value, $optional = false) 
     {
-        /* adds a varaiable length option to the message, and also prevents adding addtional fixed fields */
+        /* adds a variable length option to the message, and also prevents adding additional fixed fields */
         if ($optional == true && $value == '') {
             /* skipped */
             $this->_debugmsg( "SIP2: Skipping optional field {$field}");

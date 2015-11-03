@@ -1,6 +1,7 @@
 {
     "name": "cap60552/php-sip2",
     "description": "PHP class library to facilitate communication with Integrated Library System (ILS) servers via 3M's SIP2.",
+	"type": "library",
     "authors": [
         {
             "name": "John Wohlers",
@@ -11,7 +12,9 @@
     "homepage": "https://github.com/cap60552/php-sip2",
     "license": "GPL-3.0",
     "support": {
-        "issues": "https://github.com/cap60552/php-sip2/issues"
+        "issues": "https://github.com/cap60552/php-sip2/issues",
+		"source": "https://github.com/cap60552/php-sip2",
+		"docs": "https://github.com/cap60552/php-sip2/tree/master/doc"
     },
     "autoload": {
         "classmap": ["/"]
