@@ -1,23 +1,49 @@
 {
-    "name": "cap60552/php-sip2",
-    "description": "PHP class library to facilitate communication with Integrated Library System (ILS) servers via 3M's SIP2.",
-	"type": "library",
+    "name": "lordelph/php-sip2",
+    "type": "library",
+    "description": "Communicate with Integrated Library System (ILS) servers via 3M's SIP2",
+    "keywords": [
+        "lordelph",
+        "php-sip2"
+    ],
+    "homepage": "https://github.com/lordelph/php-sip2",
+    "license": "MIT",
     "authors": [
         {
-            "name": "John Wohlers",
-            "email": "john@wohlershome.net",
-            "role": "Maintainer"
+            "name": "Paul Dixon",
+            "email": "paul@elphin.com",
+            "homepage": "https://github.com/lordelph",
+            "role": "Developer"
         }
     ],
-    "homepage": "https://github.com/cap60552/php-sip2",
-    "license": "GPL-3.0",
-    "support": {
-        "issues": "https://github.com/cap60552/php-sip2/issues",
-		"source": "https://github.com/cap60552/php-sip2",
-		"docs": "https://github.com/cap60552/php-sip2/tree/master/doc"
+    "require": {
+        "php" : "~5.6|~7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit" : ">=5.4.3",
+        "squizlabs/php_codesniffer": "^2.3"
     },
     "autoload": {
-        "classmap": ["/"]
+        "psr-4": {
+            "lordelph\\SIP2\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "lordelph\\SIP2\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "check-style": "phpcs -p --standard=PSR2 --runtime-set ignore_errors_on_exit 1 --runtime-set ignore_warnings_on_exit 1 src tests",
+        "fix-style": "phpcbf -p --standard=PSR2 --runtime-set ignore_errors_on_exit 1 --runtime-set ignore_warnings_on_exit 1 src tests"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
     }
 }
-
