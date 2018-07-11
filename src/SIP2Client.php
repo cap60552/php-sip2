@@ -16,6 +16,9 @@ namespace lordelph\SIP2;
  * @link       https://github.com/cap60552/php-sip2/
  */
 
+use Socket\Raw\Factory;
+use \Socket\Raw\Socket;
+
 /**
  *
  *  TODO
@@ -69,7 +72,7 @@ class SIP2Client
     public $AN = 'SIPCHK';
     public $AA = '';
 
-    /* Private variable to hold socket connection */
+    /** @var Socket */
     private $socket;
 
     /* Sequence number counter */
@@ -81,6 +84,31 @@ class SIP2Client
     /* Work area for building a message */
     private $msgBuild = '';
     private $noFixed = false;
+
+    private $socketFactory;
+
+    /**
+     * Allows an alternative socket factory to be injected. The allows us to
+     * mock socket connections for testing
+     *
+     * @param Factory $factory
+     */
+    public function setSocketFactory(Factory $factory)
+    {
+        $this->socketFactory = $factory;
+    }
+
+    /**
+     * Get the current socket factory, creating a default on if necessary
+     * @return Factory
+     */
+    private function getSocketFactory()
+    {
+        if (is_null($this->socketFactory)) {
+            $this->socketFactory = new Factory(); //@codeCoverageIgnore
+        }
+        return $this->socketFactory;
+    }
 
     public function msgPatronStatusRequest()
     {
@@ -671,15 +699,20 @@ class SIP2Client
         /* sends the current message, and gets the response */
         $result = '';
         $terminator = '';
-        $nr = '';
 
         $this->debugMsg('SIP2: Sending SIP2 request...');
-        socket_write($this->socket, $message, strlen($message));
+        $this->socket->write($message);
 
         $this->debugMsg('SIP2: Request Sent, Reading response');
 
-        while ($terminator != "\x0D" && $nr !== false) {
-            $nr = socket_recv($this->socket, $terminator, 1, 0);
+        while ($terminator != "\x0D") {
+            try {
+                $terminator = $this->socket->recv(1, 0);
+            }
+            catch (\Exception $e) {
+                break;
+            }
+            //$nr = socket_recv($this->socket, $terminator, 1, 0);
             $result = $result . $terminator;
         }
 
@@ -713,36 +746,23 @@ class SIP2Client
         /* Socket Communications  */
         $this->debugMsg("SIP2: --- BEGIN SIP communication ---");
 
-        /* Get the IP address for the target host. */
-        $address = gethostbyname($this->hostname);
-
-        /* Create a TCP/IP socket. */
-        $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-
-        /* check for actual truly false result using ===*/
-        if ($this->socket === false) {
-            $this->debugMsg("SIP2: socket_create() failed: reason: " . socket_strerror($this->socket));
+        $address = $this->hostname . ':' . $this->port;
+        try {
+            $this->socket = $this->getSocketFactory()->createClient($address);
+        }
+        catch (\Exception $e) {
+            $this->debugMsg("SIP2Client: Failed to connect: ".$e->getMessage());
             return false;
-        } else {
-            $this->debugMsg("SIP2: Socket Created");
         }
-        $this->debugMsg("SIP2: Attempting to connect to '$address' on port '{$this->port}'...");
 
-        /* open a connection to the host */
-        $result = socket_connect($this->socket, $address, $this->port);
-        if (!$result) {
-            $this->debugMsg("SIP2: socket_connect() failed.\nReason: ($result) " . socket_strerror($result));
-        } else {
-            $this->debugMsg("SIP2: --- SOCKET READY ---");
-        }
-        /* return the result from the socket connect */
-        return $result;
+        $this->debugMsg("SIP2: --- SOCKET READY ---");
+        return true;
     }
 
     public function disconnect()
     {
-        /*  Close the socket */
-        socket_close($this->socket);
+        $this->socket->close();
+        $this->socket = null;
     }
 
     /* Core local utility functions */
@@ -783,7 +803,7 @@ class SIP2Client
                 $result[$field][] = $clean;
             }
         }
-        $result['AZ'][] = substr($response, -5);
+        $result['AZ'][] = trim(substr($response, -5));
 
         return ($result);
     }
@@ -802,7 +822,7 @@ class SIP2Client
 
         /* 2008.03.15 - Fixed a bug that allowed the checksum to be larger then 4 digits */
         return substr(sprintf("%4X", $crc), -4, 4);
-    } /* end crc */
+    }
 
     private function getSeqNumber()
     {
@@ -831,6 +851,7 @@ class SIP2Client
         if ($this->crc($test[0]) == $test[1]) {
             return true;
         } else {
+            //echo "Expected SRC was ".$this->crc($test[0])." but found ".$test[1]."\n";
             return false;
         }
     }
