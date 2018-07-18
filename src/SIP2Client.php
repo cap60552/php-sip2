@@ -202,12 +202,13 @@ class SIP2Client
             * 2 SC is about to shut down
             */
 
-        if ($version > 3) {
-            $version = 2;
-        }
+        $version = min(2, $version);
+
         if ($status < 0 || $status > 2) {
+            //@codeCoverageIgnoreStart
             $this->debugMsg("SIP2: Invalid status passed to msgSCStatus");
             return false;
+            //@codeCoverageIgnoreEnd
         }
         $this->newMessage('99');
         $this->addFixedOption($status, 1);
@@ -644,12 +645,17 @@ class SIP2Client
             [
                 'Ok' => substr($response, 2, 1),
                 'available' => substr($response, 3, 1),
-                'TransactionDate' => substr($response, 4, 18),
-                'ExpirationDate' => substr($response, 22, 18)
+                'TransactionDate' => substr($response, 4, 18)
             ];
 
+        //expiration date is optional an indicated by BW
+        $variableOffset=22;
+        if (substr($response, 22, 2) === 'BW') {
+            $result['fixed']['ExpirationDate'] = substr($response, 24, 18);
+            $variableOffset=42;
+        }
 
-        $result['variable'] = $this->parseVariableData($response, 40);
+        $result['variable'] = $this->parseVariableData($response, $variableOffset);
 
         return $result;
     }
@@ -708,8 +714,7 @@ class SIP2Client
         while ($terminator != "\x0D") {
             try {
                 $terminator = $this->socket->recv(1, 0);
-            }
-            catch (\Exception $e) {
+            } catch (\Exception $e) {
                 break;
             }
             //$nr = socket_recv($this->socket, $terminator, 1, 0);
@@ -749,8 +754,7 @@ class SIP2Client
         $address = $this->hostname . ':' . $this->port;
         try {
             $this->socket = $this->getSocketFactory()->createClient($address);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             $this->debugMsg("SIP2Client: Failed to connect: ".$e->getMessage());
             return false;
         }
