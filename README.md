@@ -45,7 +45,7 @@ $result = $mysip->connect();
 $in = $mysip->msgPatronInformation('charged');
 
 // parse the raw response into an array
-$result = $mysip->parsePatronInfoResponse( $mysip->get_message($in) );
+$result = $mysip->parsePatronInfoResponse( $mysip->getMessage($in) );
 ```
 
 ## Change log
