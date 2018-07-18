@@ -37,4 +37,16 @@ class HoldTest extends AbstractSIP2ClientTest
         $this->assertVariableMetadata('thankyou', $info, 'AF');
         $this->assertVariableMetadata('print', $info, 'AG');
     }
+
+    public function testBadMode()
+    {
+        $client = new SIP2Client;
+        $this->assertFalse($client->msgHold('X'));
+    }
+
+    public function testBadHoldType()
+    {
+        $client = new SIP2Client;
+        $this->assertFalse($client->msgHold('+', '', 999));
+    }
 }
