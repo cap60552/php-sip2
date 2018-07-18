@@ -4,63 +4,38 @@ namespace lordelph\SIP2;
 
 use Prophecy\Argument;
 
-class SIP2ClientTest extends \PHPUnit\Framework\TestCase
+abstract class AbstractSIP2ClientTest extends \PHPUnit\Framework\TestCase
 {
-    public function testBasicPatronInfo()
+    /**
+     * Make a valid response by adding sequence number and CRC
+     * @param $str
+     * @return string
+     */
+    protected function makeResponse($str)
     {
-        //our mock socket will return these responses in sequence after each write() to the socket
-        //here we simulate a basic patron information request
-        $responses = [
-            "64              00020180711    185645000000000010000000000009AOExample City Library|" .
-            "AA1381380|AEMr Joe Tester|BZ9999|CA9999|CB9999|BLY|CQY|BV0.00|" .
-            "BEjoe.tester@example.com|AY0AZCF82\x0D"
-        ];
+        //add sequence number and intro for checksum
+        $str .= 'AY0AZ';
+        //add checksum
+        $str .= $this->crc($str);
+        //add terminator
+        $str .= "\x0D";
+        return $str;
+    }
 
-        $client = new SIP2Client;
-        $client->setSocketFactory($this->createMockSIP2Server($responses));
-
-        $client->hostname = 'server.example.com';
-        $client->port = 6002;
-        $client->patron = '101010101';
-        $client->patronpwd = '010101';
-
-        $ok = $client->connect();
-        $this->assertTrue($ok);
-
-        $msg = $client->msgPatronInformation('none');
-        $this->assertNotEmpty($msg);
-
-        $response = $client->getMessage($msg);
-        $this->assertNotEmpty($response);
-
-        $info = $client->parsePatronInfoResponse($response);
-        $this->assertArrayHasKey('fixed', $info);
-        $this->assertArrayHasKey('variable', $info);
-        $this->assertArrayHasKey('Raw', $info['variable']);
-
-        //check the fixed data
-        $this->assertFixedMetadata('              ', $info, 'PatronStatus');
-        $this->assertFixedMetadata('000', $info, 'Language');
-        $this->assertFixedMetadata('20180711    185645', $info, 'TransactionDate');
-        $this->assertFixedMetadata(0, $info, 'HoldCount');
-        $this->assertFixedMetadata(10, $info, 'ChargedCount');
-        $this->assertFixedMetadata(0, $info, 'FineCount');
-        $this->assertFixedMetadata(0, $info, 'RecallCount');
-        $this->assertFixedMetadata(9, $info, 'UnavailableCount');
-
-        //check variable data
-        $this->assertVariableMetadata('Example City Library', $info, 'AO');
-        $this->assertVariableMetadata('1381380', $info, 'AA');
-        $this->assertVariableMetadata('Mr Joe Tester', $info, 'AE');
-        $this->assertVariableMetadata('9999', $info, 'BZ');
-        $this->assertVariableMetadata('9999', $info, 'CA');
-        $this->assertVariableMetadata('9999', $info, 'CB');
-        $this->assertVariableMetadata('Y', $info, 'BL');
-        $this->assertVariableMetadata('Y', $info, 'CQ');
-        $this->assertVariableMetadata('0.00', $info, 'BV');
-        $this->assertVariableMetadata('joe.tester@example.com', $info, 'BE');
-        $this->assertVariableMetadata('0', $info, 'AY');
-        $this->assertVariableMetadata("CF82", $info, 'AZ');
+    /**
+     * Calc SIP2 CRC value
+     * @param $buffer
+     * @return string
+     */
+    private function crc($buffer)
+    {
+        $sum = 0;
+        $len = strlen($buffer);
+        for ($n = 0; $n < $len; $n++) {
+            $sum = $sum + ord($buffer[$n]);
+        }
+        $crc = ($sum & 0xFFFF) * -1;
+        return substr(sprintf("%4X", $crc), -4, 4);
     }
 
     /**
@@ -71,7 +46,7 @@ class SIP2ClientTest extends \PHPUnit\Framework\TestCase
      * @param array $responses
      * @return \Socket\Raw\Factory
      */
-    private function createMockSIP2Server(array $responses)
+    protected function createMockSIP2Server(array $responses)
     {
         $socket = $this->prophesize(\Socket\Raw\Socket::class);
 
@@ -84,7 +59,7 @@ class SIP2ClientTest extends \PHPUnit\Framework\TestCase
         $socket->write(Argument::type('string'))->will(function ($args) use ($socket) {
             //printf("write(%s)\n", $args[0]);
 
-            //next call to recv will start returning out next canned response
+            //next call to recv will start returning our next canned response
             $socket->responseIdx++;
             if ($socket->responseIdx >= count($socket->responses)) {
                 throw new \LogicException(
@@ -118,7 +93,7 @@ class SIP2ClientTest extends \PHPUnit\Framework\TestCase
      * @param array $info info array returned from parsePatronInfoResponse
      * @param string $name name of element
      */
-    private function assertFixedMetadata($expected, array $info, $name)
+    protected function assertFixedMetadata($expected, array $info, $name)
     {
         $this->assertArrayHasKey($name, $info['fixed']);
         $this->assertEquals($expected, $info['fixed'][$name]);
@@ -130,7 +105,7 @@ class SIP2ClientTest extends \PHPUnit\Framework\TestCase
      * @param array $info info array returned from parsePatronInfoResponse
      * @param string $name name of element
      */
-    private function assertVariableMetadata($expected, array $info, $name)
+    protected function assertVariableMetadata($expected, array $info, $name)
     {
         $this->assertArrayHasKey($name, $info['variable']);
         if (is_string($expected)) {
