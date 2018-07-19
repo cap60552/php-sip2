@@ -24,22 +24,21 @@ use Socket\Raw\Factory;
 use \Socket\Raw\Socket;
 
 /**
- *
- *  TODO
- *   - Clean up variable names, check for consistency
- *   - Add better i18n support, including functions to handle the SIP2 language definitions
- *
+ * SIP2Client provides a simple client for SIP2 library services
  */
-
 class SIP2Client implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    /* Public variables for configuration */
+    //-----------------------------------------------------
+    // connection configuration
+    //-----------------------------------------------------
+
+    /** @var string hostname or IP address to connect to */
     public $hostname;
-    public $port = 6002; /* default sip2 port for Sirsi */
-    public $library = '';
-    public $language = '001'; /* 001= english */
+
+    /** @var int port number */
+    public $port = 6002;
 
     /**
      * @var string IP (or IP:port) to bind outbound connnections to
@@ -48,55 +47,77 @@ class SIP2Client implements LoggerAwareInterface
      */
     public $bindTo = '';
 
-    /* Patron ID */
-    public $patron = ''; /* AA */
-    public $patronpwd = ''; /* AD */
-
-    /* Terminal password */
-    public $AC = ''; /*AC */
-
-    /* Maximum number of resends allowed before getMessage gives up */
+    /** @var int maximum number of resends in the event of CRC failure */
     public $maxretry = 3;
 
-    /* Terminators
-    *
-    * From page 15 of SPI2 v2 docs:
-    * All messages must end in a carriage return (hexadecimal 0d).
-    * 
-    * Technically $msgTerminator should be set to \r only. However some vendors mistakenly require the \r\n.  
-    *
-    * TODO: Create a function to set this, rather than exposing the variable as public.   
-    */
+    //-----------------------------------------------------
+    // patron credentials
+    //-----------------------------------------------------
+
+    /** @var string patron identifier / barcode */
+    public $patron = '';
+
+    /** @var string patron password / pin */
+    public $patronpwd = '';
+
+    //-----------------------------------------------------
+    // request options
+    //-----------------------------------------------------
+
+    /** @var string language code - 001 is English */
+    public $language = '001';
+
+   /**
+     * @var string terminator for requests. This should be just \r (0x0d) according to docs, but some vendors
+     * require \r\n
+     */
     public $msgTerminator = "\r\n";
 
+    /** @var string variable length field terminator */
     public $fldTerminator = '|';
 
-    /* Login Variables */
-    public $UIDalgorithm = 0;   /* 0    = unencrypted, default */
-    public $PWDalgorithm = 0;   /* undefined in documentation */
-    public $scLocation = '';  /* Location Code */
+    /** @var int encryption algorithm for user id using during login 0=unencrypted */
+    public $uidAlgorithm = 0;
+    
+    /** @var int encryption algorithm for user password using during login (no docs for this) */
+    public $passwordAlgorithm = 0;
 
-    /* Debug */
-    public $debug = false;
+    /** @var string Default location used in some request messages */
+    public $location = '';
 
-    /* Public variables used for building messages */
-    public $AO = 'WohlersSIP';
-    public $AN = 'SIPCHK';
-    public $AA = '';
+    /** @var string Institution ID */
+    public $institutionId = 'WohlersSIP';
+
+    /** @var string Patron identifier */
+    public $patronId = '';
+
+    /** @var string Terminal password */
+    public $terminalPassword = '';
+
+    //-----------------------------------------------------
+    // internal request building
+    //-----------------------------------------------------
+
+    /** @var int sequence counter for AY */
+    private $seq = -1;
+
+    /** @var int resend counter */
+    private $retry = 0;
+
+    /** @var string request is built up here  */
+    private $msgBuild = '';
+
+    /** @var bool tracks when a variable field is used to prevent further fixed fields */
+    private $noFixed = false;
+
+    //-----------------------------------------------------
+    // internal socket handling
+    //-----------------------------------------------------
 
     /** @var Socket */
     private $socket;
 
-    /* Sequence number counter */
-    private $seq = -1;
-
-    /* resend counter */
-    private $retry = 0;
-
-    /* Work area for building a message */
-    private $msgBuild = '';
-    private $noFixed = false;
-
+    /** @var Factory injectable factory for creating socket connections */
     private $socketFactory;
 
     /**
@@ -139,9 +160,9 @@ class SIP2Client implements LoggerAwareInterface
         $this->newMessage('23');
         $this->addFixedOption($this->language, 3);
         $this->addFixedOption($this->datestamp(), 18);
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
-        $this->addVarOption('AC', $this->AC);
+        $this->addVarOption('AC', $this->terminalPassword);
         $this->addVarOption('AD', $this->patronpwd);
         return $this->returnMessage();
     }
@@ -168,10 +189,10 @@ class SIP2Client implements LoggerAwareInterface
             /* send a blank date due to allow ACS to use default date due computed for item */
             $this->addFixedOption('', 18);
         }
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
         $this->addVarOption('AB', $item);
-        $this->addVarOption('AC', $this->AC);
+        $this->addVarOption('AC', $this->terminalPassword);
         $this->addVarOption('CH', $itmProp, true);
         $this->addVarOption('AD', $this->patronpwd, true);
         $this->addVarOption('BO', $fee, true); /* Y or N */
@@ -185,7 +206,7 @@ class SIP2Client implements LoggerAwareInterface
         /* Check-in an item (09) - untested */
         if ($itmLocation == '') {
             /* If no location is specified, assume the default location of the SC, behaviour suggested by spec*/
-            $itmLocation = $this->scLocation;
+            $itmLocation = $this->location;
         }
 
         $this->newMessage('09');
@@ -193,9 +214,9 @@ class SIP2Client implements LoggerAwareInterface
         $this->addFixedOption($this->datestamp(), 18);
         $this->addFixedOption($this->datestamp($itmReturnDate), 18);
         $this->addVarOption('AP', $itmLocation);
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AB', $item);
-        $this->addVarOption('AC', $this->AC);
+        $this->addVarOption('AC', $this->terminalPassword);
         $this->addVarOption('CH', $itmProp, true);
         $this->addVarOption('BI', $cancel, true); /* Y or N */
 
@@ -208,10 +229,10 @@ class SIP2Client implements LoggerAwareInterface
         $this->newMessage('01');
         $this->addFixedOption($retained, 1); /* Y if card has been retained */
         $this->addFixedOption($this->datestamp(), 18);
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AL', $message);
-        $this->addVarOption('AA', $this->AA);
-        $this->addVarOption('AC', $this->AC);
+        $this->addVarOption('AA', $this->patronId);
+        $this->addVarOption('AC', $this->terminalPassword);
 
         return $this->returnMessage();
     }
@@ -251,11 +272,11 @@ class SIP2Client implements LoggerAwareInterface
     {
         /* Login (93) - untested */
         $this->newMessage('93');
-        $this->addFixedOption($this->UIDalgorithm, 1);
-        $this->addFixedOption($this->PWDalgorithm, 1);
+        $this->addFixedOption($this->uidAlgorithm, 1);
+        $this->addFixedOption($this->passwordAlgorithm, 1);
         $this->addVarOption('CN', $sipLogin);
         $this->addVarOption('CO', $sipPassword);
-        $this->addVarOption('CP', $this->scLocation, true);
+        $this->addVarOption('CP', $this->location, true);
         return $this->returnMessage();
     }
 
@@ -280,9 +301,9 @@ class SIP2Client implements LoggerAwareInterface
         $this->addFixedOption($this->language, 3);
         $this->addFixedOption($this->datestamp(), 18);
         $this->addFixedOption(sprintf("%-10s", $summary[$type]), 10);
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
-        $this->addVarOption('AC', $this->AC, true);
+        $this->addVarOption('AC', $this->terminalPassword, true);
         $this->addVarOption('AD', $this->patronpwd, true);
         /* old function version used padded 5 digits, not sure why */
         $this->addVarOption('BP', $start, true);
@@ -297,9 +318,9 @@ class SIP2Client implements LoggerAwareInterface
 
         $this->newMessage('35');
         $this->addFixedOption($this->datestamp(), 18);
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
-        $this->addVarOption('AC', $this->AC, true);
+        $this->addVarOption('AC', $this->terminalPassword, true);
         $this->addVarOption('AD', $this->patronpwd, true);
         return $this->returnMessage();
     }
@@ -345,9 +366,9 @@ class SIP2Client implements LoggerAwareInterface
         // due to currency format localization, it is up to the programmer
         // to properly format their payment amount
         $this->addVarOption('BV', $pmtAmount);
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
-        $this->addVarOption('AC', $this->AC, true);
+        $this->addVarOption('AC', $this->terminalPassword, true);
         $this->addVarOption('AD', $this->patronpwd, true);
         $this->addVarOption('CG', $feeId, true);
         $this->addVarOption('BK', $transId, true);
@@ -360,9 +381,9 @@ class SIP2Client implements LoggerAwareInterface
 
         $this->newMessage('17');
         $this->addFixedOption($this->datestamp(), 18);
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AB', $item);
-        $this->addVarOption('AC', $this->AC, true);
+        $this->addVarOption('AC', $this->terminalPassword, true);
         return $this->returnMessage();
     }
 
@@ -372,9 +393,9 @@ class SIP2Client implements LoggerAwareInterface
 
         $this->newMessage('19');
         $this->addFixedOption($this->datestamp(), 18);
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AB', $item);
-        $this->addVarOption('AC', $this->AC, true);
+        $this->addVarOption('AC', $this->terminalPassword, true);
         $this->addVarOption('CH', $itmProp);
         return $this->returnMessage();
     }
@@ -386,9 +407,9 @@ class SIP2Client implements LoggerAwareInterface
         It should only be used for system testing and validation. */
         $this->newMessage('25');
         $this->addFixedOption($this->datestamp(), 18);
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
-        $this->addVarOption('AC', $this->AC, true);
+        $this->addVarOption('AC', $this->terminalPassword, true);
         $this->addVarOption('AD', $this->patronpwd, true);
         return $this->returnMessage();
     }
@@ -438,12 +459,12 @@ class SIP2Client implements LoggerAwareInterface
         }
         $this->addVarOption('BS', $pkupLocation, true);
         $this->addVarOption('BY', $holdtype, true);
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
         $this->addVarOption('AD', $this->patronpwd, true);
         $this->addVarOption('AB', $item, true);
         $this->addVarOption('AJ', $title, true);
-        $this->addVarOption('AC', $this->AC, true);
+        $this->addVarOption('AC', $this->terminalPassword, true);
         $this->addVarOption('BO', $fee, true); /* Y when user has agreed to a fee notice */
 
         return $this->returnMessage();
@@ -471,12 +492,12 @@ class SIP2Client implements LoggerAwareInterface
             /* send a blank date due to allow ACS to use default date due computed for item */
             $this->addFixedOption('', 18);
         }
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
         $this->addVarOption('AD', $this->patronpwd, true);
         $this->addVarOption('AB', $item, true);
         $this->addVarOption('AJ', $title, true);
-        $this->addVarOption('AC', $this->AC, true);
+        $this->addVarOption('AC', $this->terminalPassword, true);
         $this->addVarOption('CH', $itmProp, true);
         $this->addVarOption('BO', $fee, true); /* Y or N */
 
@@ -487,10 +508,10 @@ class SIP2Client implements LoggerAwareInterface
     {
         /* renew all items for a patron (65) - untested */
         $this->newMessage('65');
-        $this->addVarOption('AO', $this->AO);
+        $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
         $this->addVarOption('AD', $this->patronpwd, true);
-        $this->addVarOption('AC', $this->AC, true);
+        $this->addVarOption('AC', $this->terminalPassword, true);
         $this->addVarOption('BO', $fee, true); /* Y or N */
 
         return $this->returnMessage();
