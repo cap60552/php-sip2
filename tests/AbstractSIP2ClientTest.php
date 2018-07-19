@@ -4,6 +4,12 @@ namespace lordelph\SIP2;
 
 use Prophecy\Argument;
 
+/**
+ * AbstractSIP2ClientTest provides a mock socket which can return a sequence of canned responses, and
+ * helpers to assist with asserting the content of a parsed response
+ *
+ * @package lordelph\SIP2
+ */
 abstract class AbstractSIP2ClientTest extends \PHPUnit\Framework\TestCase
 {
     /**
@@ -79,6 +85,7 @@ abstract class AbstractSIP2ClientTest extends \PHPUnit\Framework\TestCase
             return $socket->responses[$socket->responseIdx][$socket->responseOffset++];
         });
 
+        $socket->close()->willReturn(true);
 
         //our factory just returns our mock
         $factory = $this->prophesize(\Socket\Raw\Factory::class);

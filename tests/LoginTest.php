@@ -22,5 +22,7 @@ class LoginTest extends AbstractSIP2ClientTest
 
         $info = $client->parseLoginResponse($response);
         $this->assertFixedMetadata('1', $info, 'Ok');
+
+        $client->disconnect();
     }
 }

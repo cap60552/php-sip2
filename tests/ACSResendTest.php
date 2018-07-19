@@ -2,6 +2,10 @@
 
 namespace lordelph\SIP2;
 
+/**
+ * Tests the ACS Resend request
+ * @package lordelph\SIP2
+ */
 class ACSResendTest extends AbstractSIP2ClientTest
 {
     public function testResend()
