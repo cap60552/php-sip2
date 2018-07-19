@@ -16,6 +16,10 @@ namespace lordelph\SIP2;
  * @link       https://github.com/cap60552/php-sip2/
  */
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Socket\Raw\Factory;
 use \Socket\Raw\Socket;
 
@@ -27,8 +31,9 @@ use \Socket\Raw\Socket;
  *
  */
 
-class SIP2Client
+class SIP2Client implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
 
     /* Public variables for configuration */
     public $hostname;
@@ -93,6 +98,17 @@ class SIP2Client
     private $noFixed = false;
 
     private $socketFactory;
+
+    /**
+     * Constructor allows you to provide a PSR-3 logger, but you can also use the setLogger method
+     * later on
+     *
+     * @param LoggerInterface|null $logger
+     */
+    public function __construct(LoggerInterface $logger = null)
+    {
+        $this->logger = $logger ?? new NullLogger();
+    }
 
     /**
      * Allows an alternative socket factory to be injected. The allows us to
@@ -213,7 +229,7 @@ class SIP2Client
 
         if ($status < 0 || $status > 2) {
             //@codeCoverageIgnoreStart
-            $this->debugMsg("SIP2: Invalid status passed to msgSCStatus");
+            $this->logger->error("SIP2: Invalid status passed to msgSCStatus");
             return false;
             //@codeCoverageIgnoreEnd
         }
@@ -310,13 +326,13 @@ class SIP2Client
 
         if (!is_numeric($feeType) || $feeType > 99 || $feeType < 1) {
             /* not a valid fee type - exit */
-            $this->debugMsg("SIP2: (msgFeePaid) Invalid fee type: {$feeType}");
+            $this->logger->error("SIP2: (msgFeePaid) Invalid fee type: {$feeType}");
             return false;
         }
 
         if (!is_numeric($pmtType) || $pmtType > 99 || $pmtType < 0) {
             /* not a valid payment type - exit */
-            $this->debugMsg("SIP2: (msgFeePaid) Invalid payment type: {$pmtType}");
+            $this->logger->error("SIP2: (msgFeePaid) Invalid payment type: {$pmtType}");
             return false;
         }
 
@@ -395,7 +411,7 @@ class SIP2Client
         */
         if (strpos('-+*', $mode) === false) {
             /* not a valid mode - exit */
-            $this->debugMsg("SIP2: Invalid hold mode: {$mode}");
+            $this->logger->error("SIP2: Invalid hold mode: {$mode}");
             return false;
         }
 
@@ -407,7 +423,7 @@ class SIP2Client
             * 3   specific copy
             * 4   any copy at a single branch or location
             */
-            $this->debugMsg("SIP2: Invalid hold type code: {$holdtype}");
+            $this->logger->error("SIP2: Invalid hold type code: {$holdtype}");
             return false;
         }
 
@@ -713,10 +729,10 @@ class SIP2Client
         $result = '';
         $terminator = '';
 
-        $this->debugMsg('SIP2: Sending SIP2 request...');
+        $this->logger->debug('SIP2: Sending SIP2 request...');
         $this->socket->write($message);
 
-        $this->debugMsg('SIP2: Request Sent, Reading response');
+        $this->logger->debug('SIP2: Request Sent, Reading response');
 
         while ($terminator != "\x0D") {
             //@codeCoverageIgnoreStart
@@ -730,24 +746,24 @@ class SIP2Client
             $result = $result . $terminator;
         }
 
-        $this->debugMsg("SIP2: {$result}");
+        $this->logger->info("SIP2: result={$result}");
 
         /* test message for CRC validity */
         if ($this->checkCRC($result)) {
             /* reset the retry counter on successful send */
             $this->retry = 0;
-            $this->debugMsg("SIP2: Message from ACS passed CRC check");
+            $this->logger->debug("SIP2: Message from ACS passed CRC check");
         } else {
             /* CRC check failed, request a resend */
             $this->retry++;
             if ($this->retry < $this->maxretry) {
                 /* try again */
-                $this->debugMsg("SIP2: Message failed CRC check, retrying ({$this->retry})");
+                $this->logger->warning("SIP2: Message failed CRC check, retrying ({$this->retry})");
 
                 $result = $this->getMessage($message);
             } else {
                 /* give up */
-                $this->debugMsg("SIP2: Failed to get valid CRC after {$this->maxretry} retries.");
+                $this->logger->error("SIP2: Failed to get valid CRC after {$this->maxretry} retries.");
                 return false;
             }
         }
@@ -758,7 +774,7 @@ class SIP2Client
     {
 
         /* Socket Communications  */
-        $this->debugMsg("SIP2: --- BEGIN SIP communication ---");
+        $this->logger->debug("SIP2: --- BEGIN SIP communication ---");
         $address = $this->hostname . ':' . $this->port;
 
         $this->socket = $this->getSocketFactory()->createFromString($address, $scheme);
@@ -772,11 +788,11 @@ class SIP2Client
         } catch (\Exception $e) {
             $this->socket->close();
             $this->socket = null;
-            $this->debugMsg("SIP2Client: Failed to connect: ".$e->getMessage());
+            $this->logger->error("SIP2Client: Failed to connect: ".$e->getMessage());
             return false;
         }
 
-        $this->debugMsg("SIP2: --- SOCKET READY ---");
+        $this->logger->debug("SIP2: --- SOCKET READY ---");
         return true;
     }
 
@@ -857,18 +873,6 @@ class SIP2Client
         return ($this->seq);
     }
 
-    /**
-     * @param $message
-     * @codeCoverageIgnore
-     */
-    private function debugMsg($message)
-    {
-        /* custom debug function,  why repeat the check for the debug flag in code... */
-        if ($this->debug) {
-            trigger_error($message, E_USER_NOTICE);
-        }
-    }
-
     private function checkCRC($message)
     {
         /* test the received message's CRC by generating our own CRC from the message */
@@ -907,7 +911,7 @@ class SIP2Client
         /* adds a variable length option to the message, and also prevents adding additional fixed fields */
         if ($optional == true && $value == '') {
             /* skipped */
-            $this->debugMsg("SIP2: Skipping optional field {$field}");
+            $this->logger->debug("SIP2: Skipping optional field {$field}");
         } else {
             $this->noFixed = true; /* no more fixed for this message */
             $this->msgBuild .= $field . substr($value, 0, 255) . $this->fldTerminator;
