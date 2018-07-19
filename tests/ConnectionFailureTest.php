@@ -19,18 +19,25 @@ class ConnectionFailureTest extends AbstractSIP2ClientTest
         $this->assertFalse($ok);
     }
 
-
     /**
      * This provides a socket factory which will always fail to connect
      * @return \Socket\Raw\Factory
      */
     protected function createUnconnectableMockSIP2Server()
     {
-        //our factory will always fail to connect...
-        $factory = $this->prophesize(\Socket\Raw\Factory::class);
-        $factory->createClient(Argument::type('string'))->will(function () {
+        $socket = $this->prophesize(\Socket\Raw\Socket::class);
+        $socket->connect(Argument::type('string'))->will(function () {
             throw new \Exception('Test connection failure');
         });
+
+        $socket->close()->willReturn(true);
+
+        //our factory will always fail to connect...
+        $factory = $this->prophesize(\Socket\Raw\Factory::class);
+        $factory->createFromString(
+            Argument::type('string'),
+            Argument::any()
+        )->willReturn($socket->reveal());
 
         return $factory->reveal();
     }

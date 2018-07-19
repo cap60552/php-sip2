@@ -36,6 +36,13 @@ class SIP2Client
     public $library = '';
     public $language = '001'; /* 001= english */
 
+    /**
+     * @var string IP (or IP:port) to bind outbound connnections to
+     * Using this is only necessary on a machine which has multiple outbound connections and its important
+     * to control which one is used (normally because the remote SIP2 service is firewalled to particular IPs
+     */
+    public $bindTo = '';
+
     /* Patron ID */
     public $patron = ''; /* AA */
     public $patronpwd = ''; /* AD */
@@ -752,11 +759,19 @@ class SIP2Client
 
         /* Socket Communications  */
         $this->debugMsg("SIP2: --- BEGIN SIP communication ---");
-
         $address = $this->hostname . ':' . $this->port;
+
+        $this->socket = $this->getSocketFactory()->createFromString($address, $scheme);
+
         try {
-            $this->socket = $this->getSocketFactory()->createClient($address);
+            if (!empty($this->bindTo)) {
+                $this->socket->bind($this->bindTo);
+            }
+
+            $this->socket->connect($address);
         } catch (\Exception $e) {
+            $this->socket->close();
+            $this->socket = null;
             $this->debugMsg("SIP2Client: Failed to connect: ".$e->getMessage());
             return false;
         }
@@ -764,6 +779,7 @@ class SIP2Client
         $this->debugMsg("SIP2: --- SOCKET READY ---");
         return true;
     }
+
 
     public function disconnect()
     {
