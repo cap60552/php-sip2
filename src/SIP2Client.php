@@ -712,12 +712,14 @@ class SIP2Client
         $this->debugMsg('SIP2: Request Sent, Reading response');
 
         while ($terminator != "\x0D") {
+            //@codeCoverageIgnoreStart
             try {
                 $terminator = $this->socket->recv(1, 0);
             } catch (\Exception $e) {
                 break;
             }
-            //$nr = socket_recv($this->socket, $terminator, 1, 0);
+            //@codeCoverageIgnoreEnd
+
             $result = $result . $terminator;
         }
 
@@ -735,7 +737,7 @@ class SIP2Client
                 /* try again */
                 $this->debugMsg("SIP2: Message failed CRC check, retrying ({$this->retry})");
 
-                $this->getMessage($message);
+                $result = $this->getMessage($message);
             } else {
                 /* give up */
                 $this->debugMsg("SIP2: Failed to get valid CRC after {$this->maxretry} retries.");
@@ -839,6 +841,10 @@ class SIP2Client
         return ($this->seq);
     }
 
+    /**
+     * @param $message
+     * @codeCoverageIgnore
+     */
     private function debugMsg($message)
     {
         /* custom debug function,  why repeat the check for the debug flag in code... */
@@ -871,11 +877,13 @@ class SIP2Client
     {
         /* adds a fixed length option to the msgBuild IF no variable options have been added. */
         if ($this->noFixed) {
-            return false;
-        } else {
-            $this->msgBuild .= sprintf("%{$len}s", substr($value, 0, $len));
-            return true;
+            //@codeCoverageIgnoreStart
+            throw new \LogicException('Cannot add fixed options after variable options');
+            //@codeCoverageIgnoreEnd
         }
+
+        $this->msgBuild .= sprintf("%{$len}s", substr($value, 0, $len));
+        return true;
     }
 
     private function addVarOption($field, $value, $optional = false)
