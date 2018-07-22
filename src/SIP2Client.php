@@ -13,7 +13,6 @@ namespace lordelph\SIP2;
  * @licence    https://opensource.org/licenses/MIT
  * @copyright  John Wohlers <john@wohlershome.net>
  * @version    2.0.0
- * @link       https://github.com/cap60552/php-sip2/
  */
 
 use Psr\Log\LoggerAwareInterface;
@@ -21,10 +20,13 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Socket\Raw\Factory;
-use \Socket\Raw\Socket;
+use Socket\Raw\Socket;
 
 /**
  * SIP2Client provides a simple client for SIP2 library services
+ *
+ * In the specification, and the comments below, 'SC' (or Self Check) denotes the client, and ACS (or Automated
+ * Circulation System) denotes the server.
  */
 class SIP2Client implements LoggerAwareInterface
 {
@@ -67,7 +69,7 @@ class SIP2Client implements LoggerAwareInterface
     /** @var string language code - 001 is English */
     public $language = '001';
 
-   /**
+    /**
      * @var string terminator for requests. This should be just \r (0x0d) according to docs, but some vendors
      * require \r\n
      */
@@ -78,7 +80,7 @@ class SIP2Client implements LoggerAwareInterface
 
     /** @var int encryption algorithm for user id using during login 0=unencrypted */
     public $uidAlgorithm = 0;
-    
+
     /** @var int encryption algorithm for user password using during login (no docs for this) */
     public $passwordAlgorithm = 0;
 
@@ -104,7 +106,7 @@ class SIP2Client implements LoggerAwareInterface
     /** @var int resend counter */
     private $retry = 0;
 
-    /** @var string request is built up here  */
+    /** @var string request is built up here */
     private $msgBuild = '';
 
     /** @var bool tracks when a variable field is used to prevent further fixed fields */
@@ -143,7 +145,7 @@ class SIP2Client implements LoggerAwareInterface
     }
 
     /**
-     * Get the current socket factory, creating a default on if necessary
+     * Get the current socket factory, creating a default one if necessary
      * @return Factory
      */
     private function getSocketFactory()
@@ -154,6 +156,13 @@ class SIP2Client implements LoggerAwareInterface
         return $this->socketFactory;
     }
 
+    /**
+     * This message is used by the client to request patron information from the SIP2 server. The service must
+     * respond to this command with a Patron Status Response message.
+     * @return string
+     *
+     * @see SIP2Client::parsePatronStatusResponse()
+     */
     public function msgPatronStatusRequest()
     {
         /* Server Response: Patron Status Response message. */
@@ -167,6 +176,22 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * This message is used by the SC to request to check out an item, and also to cancel a Checkin request that did
+     * not successfully complete. The ACS must respond to this command with a Checkout Response message.
+     *
+     * @param string $item item identifier
+     * @param string $nbDateDue unix timestamp of due date (can be blank to let service decide)
+     * @param string $scRenewal renewal policy, either Y or N
+     * @param string $itmProp item properties
+     * @param string $fee fee acknowledge, either Y or N
+     * @param string $noBlock no block, either Y or N
+     * @param string $cancel Y or N - used to cancel an incomplete checkin
+     *
+     * @return string
+     *
+     * @see SIP2Client::parseCheckoutResponse()
+     */
     public function msgCheckout(
         $item,
         $nbDateDue = '',
@@ -177,7 +202,6 @@ class SIP2Client implements LoggerAwareInterface
         $cancel = 'N'
     ) {
     
-        /* Checkout an item  (11) - untested */
         $this->newMessage('11');
         $this->addFixedOption($scRenewal, 1);
         $this->addFixedOption($noBlock, 1);
@@ -201,9 +225,21 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * This message is used by the SC to request to check in an item, and also to cancel a Checkout request that did not
+     * successfully complete. The ACS must respond to this command with a Checkin Response message.
+     * @param string $item item identifier
+     * @param string $itmReturnDate unix timestamp of return date
+     * @param string $itmLocation item location
+     * @param string $itmProp item properties
+     * @param string $noBlock no block, either Y or N
+     * @param string $cancel Y or N - used to cancel an incomplete checkout
+     * @return string
+     *
+     * @see SIP2Client::parseCheckinResponse()
+     */
     public function msgCheckin($item, $itmReturnDate, $itmLocation = '', $itmProp = '', $noBlock = 'N', $cancel = '')
     {
-        /* Check-in an item (09) - untested */
         if ($itmLocation == '') {
             /* If no location is specified, assume the default location of the SC, behaviour suggested by spec*/
             $itmLocation = $this->location;
@@ -223,9 +259,20 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * This message requests that the patron card be blocked by the ACS. This is, for example, sent when the patron is
+     * detected tampering with the SC or when a patron forgets to take their card. The ACS should invalidate the
+     * patron’s card and respond with a Patron Status Response message. The ACS could also notify the library staff
+     * that the card has been blocked.
+     *
+     * @param string $message blocked card message
+     * @param string $retained Y/N indicating whether card was retained
+     * @return string
+     *
+     * @see SIP2Client::parsePatronStatusResponse()
+     */
     public function msgBlockPatron($message, $retained = 'N')
     {
-        /* Blocks a patron, and responds with a patron status response  (01) - untested */
         $this->newMessage('01');
         $this->addFixedOption($retained, 1); /* Y if card has been retained */
         $this->addFixedOption($this->datestamp(), 18);
@@ -237,15 +284,22 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * The SC status message sends SC status to the ACS. It requires an ACS Status Response message reply from the ACS.
+     * This message will be the first message sent by the SC to the ACS once a connection has been established
+     * (exception: the Login Message may be sent first to login to an ACS server program). The ACS will respond with a
+     * message that establishes some of the rules to be followed by the SC and establishes some parameters needed for
+     * further communication.
+     *
+     * @param int $status 0=OK, 1=out of paper, 2=shutting down
+     * @param int $width print width
+     * @param int $version version number X.YY
+     * @return bool|string
+     *
+     * @see SIP2Client::parseACSStatusResponse()
+     */
     public function msgSCStatus($status = 0, $width = 80, $version = 2)
     {
-        /* selfcheck status message, this should be sent immediately after login  - untested */
-        /* status codes, from the spec:
-            * 0 SC unit is OK
-            * 1 SC printer is out of paper
-            * 2 SC is about to shut down
-            */
-
         $version = min(2, $version);
 
         if ($status < 0 || $status > 2) {
@@ -261,16 +315,33 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * This message requests the ACS to re-transmit its last message. It is sent by the SC to the ACS when the checksum
+     * in a received message does not match the value calculated by the SC. The ACS should respond by re-transmitting
+     * its last message, This message should never include a “sequence number” field, even when error detection is
+     * enabled, but would include a “checksum” field since checksums are in use.
+     *
+     * @return string
+     */
     public function msgRequestACSResend()
     {
-        /* Used to request a resend due to CRC mismatch - No sequence number is used */
         $this->newMessage('97');
         return $this->returnMessage(false);
     }
 
+    /**
+     * This message can be used to login to an ACS server program. The ACS should respond with the Login Response
+     * message. Whether to use this message or to use some other mechanism to login to the ACS is configurable on the
+     * SC. When this message is used, it will be the first message sent to the ACS.
+     *
+     * @param string $sipLogin username
+     * @param string $sipPassword password
+     * @return string
+     *
+     * @see SIP2Client::parseLoginResponse()
+     */
     public function msgLogin($sipLogin, $sipPassword)
     {
-        /* Login (93) - untested */
         $this->newMessage('93');
         $this->addFixedOption($this->uidAlgorithm, 1);
         $this->addFixedOption($this->passwordAlgorithm, 1);
@@ -280,14 +351,25 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * This message is a superset of the Patron Status Request message. It should be used to request patron information.
+     * The ACS should respond with the Patron Information Response message.
+     *
+     * @param string $type one of none,hold,overdue,charged,fine,recall or unavail
+     * @param string $start item
+     * @param string $end item
+     * @return string
+     *
+     * @see SIP2Client::parsePatronInfoResponse()
+     */
     public function msgPatronInformation($type, $start = '1', $end = '5')
     {
-
         /*
         * According to the specification:
         * Only one category of items should be  requested at a time, i.e. it would take 6 of these messages, 
         * each with a different position set to Y, to get all the detailed information about a patron's items.
         */
+        $summary = [];
         $summary['none'] = '      ';
         $summary['hold'] = 'Y     ';
         $summary['overdue'] = ' Y    ';
@@ -312,10 +394,16 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * This message will be sent when a patron has completed all of their transactions. The ACS may, upon receipt of
+     * this command, close any open files or deallocate data structures pertaining to that patron. The ACS should
+     * respond with an End Session Response message.
+     * @return string
+     *
+     * @see SIP2Client::parseEndSessionResponse()
+     */
     public function msgEndPatronSession()
     {
-        /*  End Patron Session, should be sent before switching to a new patron. (35) - untested */
-
         $this->newMessage('35');
         $this->addFixedOption($this->datestamp(), 18);
         $this->addVarOption('AO', $this->institutionId);
@@ -325,34 +413,41 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
-    /* Fee paid function should go here */
+    /**
+     * This message can be used to notify the ACS that a fee has been collected from the patron. The ACS should record
+     * this information in their database and respond with a Fee Paid Response message.
+     *
+     * @param string $feeType fee type
+     *    01 other/unknown
+     *    02 administrative
+     *    03 damage
+     *    04 overdue
+     *    05 processing
+     *    06 rental
+     *    07 replacement
+     *    08 computer access charge
+     *    09 hold fee
+     * @param string $pmtType payment type
+     *    00 cash
+     *    01 visa
+     *    02 credit card
+     * @param string $pmtAmount payment amount
+     * @param string $curType currency 3-letter code following ISO Standard 4217:1995
+     * @param string $feeId Identifies a specific fee, possibly in combination with fee type.
+     * @param string $transId transaction identifier
+     *
+     * @return bool|string
+     *
+     * @see SIP2Client::parseFeePaidResponse()
+     */
     public function msgFeePaid($feeType, $pmtType, $pmtAmount, $curType = 'USD', $feeId = '', $transId = '')
     {
-        /* Fee payment function (37) - untested */
-        /* Fee Types: */
-        /* 01 other/unknown */
-        /* 02 administrative */
-        /* 03 damage */
-        /* 04 overdue */
-        /* 05 processing */
-        /* 06 rental*/
-        /* 07 replacement */
-        /* 08 computer access charge */
-        /* 09 hold fee */
-
-        /* Value Payment Type */
-        /* 00   cash */
-        /* 01   VISA */
-        /* 02   credit card */
-
         if (!is_numeric($feeType) || $feeType > 99 || $feeType < 1) {
-            /* not a valid fee type - exit */
             $this->logger->error("SIP2: (msgFeePaid) Invalid fee type: {$feeType}");
             return false;
         }
 
         if (!is_numeric($pmtType) || $pmtType > 99 || $pmtType < 0) {
-            /* not a valid payment type - exit */
             $this->logger->error("SIP2: (msgFeePaid) Invalid payment type: {$pmtType}");
             return false;
         }
@@ -376,9 +471,17 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * This message may be used to request item information. The ACS should respond with the Item Information Response
+     * message.
+     *
+     * @param string $item item identifier
+     * @return string
+     *
+     * @see SIP2Client::parseItemInfoResponse()
+     */
     public function msgItemInformation($item)
     {
-
         $this->newMessage('17');
         $this->addFixedOption($this->datestamp(), 18);
         $this->addVarOption('AO', $this->institutionId);
@@ -387,10 +490,19 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * This message can be used to send item information to the ACS, without having to do a Checkout or Checkin
+     * operation. The item properties could be stored on the ACS’s database. The ACS should respond with an Item
+     * Status Update Response message.
+     *
+     * @param string $item item identifier
+     * @param string $itmProp item properties
+     * @return string
+     *
+     * @see SIP2Client::parseItemStatusResponse()
+     */
     public function msgItemStatus($item, $itmProp = '')
     {
-        /* Item status update function (19) - untested  */
-
         $this->newMessage('19');
         $this->addFixedOption($this->datestamp(), 18);
         $this->addVarOption('AO', $this->institutionId);
@@ -400,6 +512,14 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * This message can be used by the SC to re-enable canceled patrons. It should only be used for system testing and
+     * validation. The ACS should respond with a Patron Enable Response message.
+     *
+     * @return string
+     *
+     * @see SIP2Client::parsePatronEnableResponse()
+     */
     public function msgPatronEnable()
     {
         /* Patron Enable function (25) - untested */
@@ -414,36 +534,42 @@ class SIP2Client implements LoggerAwareInterface
         return $this->returnMessage();
     }
 
+    /**
+     * This message is used to create, modify, or delete a hold. The ACS should respond with a Hold Response message.
+     * Either or both of the “item identifier” and “title identifier” fields must be present for the message to
+     * be useful.
+     *
+     * @param string $mode one of '+', '-' or '*' to denote add, delete or  change
+     * @param string $expDate unix timestamp expiration date
+     * @param string $holdtype optional single digit, one of following values:
+     *  1   other
+     *  2   any copy of title
+     *  3   specific copy
+     *  4   any copy at a single branch or location
+     * @param string $item item identifier
+     * @param string $title item title
+     * @param string $feeAcknowledged Y/N to indicate if fee has been acknowledged
+     * @param string $pickupLocation pickup location
+     * @return bool|string
+     *
+     * @see SIP2Client::parseHoldResponse()
+     */
     public function msgHold(
         $mode,
         $expDate = '',
         $holdtype = '',
         $item = '',
         $title = '',
-        $fee = 'N',
-        $pkupLocation = ''
+        $feeAcknowledged = 'N',
+        $pickupLocation = ''
     ) {
     
-        /* mode validity check */
-        /*
-        * - remove hold
-        * + place hold
-        * * modify hold
-        */
         if (strpos('-+*', $mode) === false) {
-            /* not a valid mode - exit */
             $this->logger->error("SIP2: Invalid hold mode: {$mode}");
             return false;
         }
 
         if ($holdtype != '' && ($holdtype < 1 || $holdtype > 9)) {
-            /*
-            * Valid hold types range from 1 - 9
-            * 1   other
-            * 2   any copy of title
-            * 3   specific copy
-            * 4   any copy at a single branch or location
-            */
             $this->logger->error("SIP2: Invalid hold type code: {$holdtype}");
             return false;
         }
@@ -452,12 +578,9 @@ class SIP2Client implements LoggerAwareInterface
         $this->addFixedOption($mode, 1);
         $this->addFixedOption($this->datestamp(), 18);
         if ($expDate != '') {
-            // hold expiration date,  due to the use of the datestamp function, we have to check here for
-            // empty value. when datestamp is passed an empty value it will generate a current datestamp.
-            // Also, spec says this is fixed field, but it behaves like a var field and is optional...
             $this->addVarOption('BW', $this->datestamp($expDate), true);
         }
-        $this->addVarOption('BS', $pkupLocation, true);
+        $this->addVarOption('BS', $pickupLocation, true);
         $this->addVarOption('BY', $holdtype, true);
         $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
@@ -465,22 +588,36 @@ class SIP2Client implements LoggerAwareInterface
         $this->addVarOption('AB', $item, true);
         $this->addVarOption('AJ', $title, true);
         $this->addVarOption('AC', $this->terminalPassword, true);
-        $this->addVarOption('BO', $fee, true); /* Y when user has agreed to a fee notice */
+        $this->addVarOption('BO', $feeAcknowledged, true);
 
         return $this->returnMessage();
     }
 
+    /**
+     * This message is used to renew an item. The ACS should respond with a Renew Response message. Either or both of
+     * the “item identifier” and “title identifier” fields must be present for the message to be useful.
+     *
+     * @param string $item item identifier
+     * @param string $title item title
+     * @param string $nbDateDue unix timestamp of no block due date
+     * @param string $itemProperties item properties
+     * @param string $feeAcknowledged Y/N if fee acknowledged
+     * @param string $noBlock Y/N if no blocking permitted - see specification
+     * @param string $thirdParty Y/N if third party renewals allowed
+     * @return string
+     *
+     * @see SIP2Client::parseRenewResponse()
+     */
     public function msgRenew(
         $item = '',
         $title = '',
         $nbDateDue = '',
-        $itmProp = '',
-        $fee = 'N',
+        $itemProperties = '',
+        $feeAcknowledged = 'N',
         $noBlock = 'N',
         $thirdParty = 'N'
     ) {
     
-        /* renew a single item (29) - untested */
         $this->newMessage('29');
         $this->addFixedOption($thirdParty, 1);
         $this->addFixedOption($noBlock, 1);
@@ -498,27 +635,43 @@ class SIP2Client implements LoggerAwareInterface
         $this->addVarOption('AB', $item, true);
         $this->addVarOption('AJ', $title, true);
         $this->addVarOption('AC', $this->terminalPassword, true);
-        $this->addVarOption('CH', $itmProp, true);
-        $this->addVarOption('BO', $fee, true); /* Y or N */
+        $this->addVarOption('CH', $itemProperties, true);
+        $this->addVarOption('BO', $feeAcknowledged, true); /* Y or N */
 
         return $this->returnMessage();
     }
 
-    public function msgRenewAll($fee = 'N')
+    /**
+     * This message is used to renew all items that the patron has checked out. The ACS should respond with a Renew All
+     * Response message.
+     *
+     * @param string $feeAcknowledged
+     * @return string
+     *
+     * @see SIP2Client::parseRenewAllResponse()
+     */
+    public function msgRenewAll($feeAcknowledged = 'N')
     {
-        /* renew all items for a patron (65) - untested */
         $this->newMessage('65');
         $this->addVarOption('AO', $this->institutionId);
         $this->addVarOption('AA', $this->patron);
         $this->addVarOption('AD', $this->patronpwd, true);
         $this->addVarOption('AC', $this->terminalPassword, true);
-        $this->addVarOption('BO', $fee, true); /* Y or N */
+        $this->addVarOption('BO', $feeAcknowledged, true); /* Y or N */
 
         return $this->returnMessage();
     }
 
+    /**
+     * Parse response from a Patron Status request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgPatronStatusRequest()
+     */
     public function parsePatronStatusResponse($response)
     {
+        $result = [];
         $result['fixed'] =
             array(
                 'PatronStatus' => substr($response, 2, 14),
@@ -530,8 +683,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a Checkout request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgCheckout()
+     */
     public function parseCheckoutResponse($response)
     {
+        $result = [];
         $result['fixed'] =
             array(
                 'Ok' => substr($response, 2, 1),
@@ -545,8 +706,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a Checkin request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgCheckin()
+     */
     public function parseCheckinResponse($response)
     {
+        $result = [];
         $result['fixed'] =
             array(
                 'Ok' => substr($response, 2, 1),
@@ -560,8 +729,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a SC Status request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgSCStatus()
+     */
     public function parseACSStatusResponse($response)
     {
+        $result = [];
         $result['fixed'] =
             [
                 'Online' => substr($response, 2, 1),
@@ -584,8 +761,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a Login request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgSCStatus()
+     */
     public function parseLoginResponse($response)
     {
+        $result = [];
         $result['fixed'] =
             [
                 'Ok' => substr($response, 2, 1),
@@ -594,9 +779,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a Patron Information request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgPatronInformation()
+     */
     public function parsePatronInfoResponse($response)
     {
-
+        $result = [];
         $result['fixed'] =
             [
                 'PatronStatus' => substr($response, 2, 14),
@@ -614,10 +806,17 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a End Session request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgPatronInformation()
+     */
     public function parseEndSessionResponse($response)
     {
         /*   Response example:  36Y20080228 145537AOWOHLERS|AAX00000000|AY9AZF474   */
-
+        $result = [];
         $result['fixed'] =
             [
                 'EndSession' => substr($response, 2, 1),
@@ -630,8 +829,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a Fee Paid request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgFeePaid()
+     */
     public function parseFeePaidResponse($response)
     {
+        $result = [];
         $result['fixed'] =
             [
                 'PaymentAccepted' => substr($response, 2, 1),
@@ -642,8 +849,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a Item Information request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgItemInformation()
+     */
     public function parseItemInfoResponse($response)
     {
+        $result = [];
         $result['fixed'] =
             [
                 'CirculationStatus' => intval(substr($response, 2, 2)),
@@ -657,8 +872,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a Item Status request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgItemStatus()
+     */
     public function parseItemStatusResponse($response)
     {
+        $result = [];
         $result['fixed'] =
             [
                 'PropertiesOk' => substr($response, 2, 1),
@@ -669,8 +892,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a Patron Enable request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgPatronEnable()
+     */
     public function parsePatronEnableResponse($response)
     {
+        $result = [];
         $result['fixed'] =
             [
                 'PatronStatus' => substr($response, 2, 14),
@@ -682,9 +913,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a Hold request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgHold()
+     */
     public function parseHoldResponse($response)
     {
-
+        $result = [];
         $result['fixed'] =
             [
                 'Ok' => substr($response, 2, 1),
@@ -693,10 +931,10 @@ class SIP2Client implements LoggerAwareInterface
             ];
 
         //expiration date is optional an indicated by BW
-        $variableOffset=22;
+        $variableOffset = 22;
         if (substr($response, 22, 2) === 'BW') {
             $result['fixed']['ExpirationDate'] = substr($response, 24, 18);
-            $variableOffset=42;
+            $variableOffset = 42;
         }
 
         $result['variable'] = $this->parseVariableData($response, $variableOffset);
@@ -705,6 +943,13 @@ class SIP2Client implements LoggerAwareInterface
     }
 
 
+    /**
+     * Parse response from a Renew request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgRenew()
+     */
     public function parseRenewResponse($response)
     {
         /* Response Example:
@@ -712,6 +957,7 @@ class SIP2Client implements LoggerAwareInterface
            AJFolksongs of Britain and Ireland|AH5/23/2008,23:59|CH|
            AFOverride required to exceed renewal limit.|AY1AZCDA5
         */
+        $result = [];
         $result['fixed'] =
             [
                 'Ok' => substr($response, 2, 1),
@@ -727,8 +973,16 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Parse response from a Renew All request
+     * @param string $response ACS response
+     * @return array with 'fixed' and 'variable' keys
+     *
+     * @see SIP2Client::msgRenewAll()
+     */
     public function parseRenewAllResponse($response)
     {
+        $result = [];
         $result['fixed'] =
             [
                 'Ok' => substr($response, 2, 1),
@@ -743,7 +997,12 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
-
+    /**
+     * Send a request to ACS and obtain raw response
+     *
+     * @param string $message generated by one of the msg*() methods
+     * @return bool|string false in event of failure, otherwise a string containing ACS response
+     */
     public function getMessage($message)
     {
         /* sends the current message, and gets the response */
@@ -791,9 +1050,12 @@ class SIP2Client implements LoggerAwareInterface
         return $result;
     }
 
+    /**
+     * Connect to ACS via SIP2
+     * @return bool returns true if connection is established
+     */
     public function connect()
     {
-
         /* Socket Communications  */
         $this->logger->debug("SIP2: --- BEGIN SIP communication ---");
         $address = $this->hostname . ':' . $this->port;
@@ -809,7 +1071,7 @@ class SIP2Client implements LoggerAwareInterface
         } catch (\Exception $e) {
             $this->socket->close();
             $this->socket = null;
-            $this->logger->error("SIP2Client: Failed to connect: ".$e->getMessage());
+            $this->logger->error("SIP2Client: Failed to connect: " . $e->getMessage());
             return false;
         }
 
@@ -817,7 +1079,9 @@ class SIP2Client implements LoggerAwareInterface
         return true;
     }
 
-
+    /**
+     * Disconnect from ACS
+     */
     public function disconnect()
     {
         $this->socket->close();
