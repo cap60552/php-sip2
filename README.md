@@ -10,11 +10,15 @@
 
 PHP client library to facilitate communication with Integrated Library System (ILS) servers via 3M's SIP2.
 
-## ToDo
-- abstract socket into separate class https://github.com/clue/php-socket-raw
-- make socket factory which can be given to SIP2Client
-- now can make unit tests which simulate socket connections
+This is derived from [cap60552/php-sip2](https://github.com/cap60552/php-sip2) by John Wohlers, 
+with following improvements:
 
+* Full unit tests
+* PSR-2 formatting conventions
+* PSR-3 logging
+* PSR-4 auto-loading
+* Ability to bind to specific interface when making requests
+* MIT license (with consent of original author who used GPL)
 
 ## Install
 
@@ -24,11 +28,32 @@ Via Composer
 $ composer require lordelph/php-sip2
 ```
 
+## Migration from v1.0
+
+If you want to switch to using this class from [cap60552/php-sip2](https://github.com/cap60552/php-sip2),
+you should only need to change instantations of `sip2` to `SIP2Client` and ensure you include the class with 
+`use lordelph\SIP2\SIP2Client`
+
+```php
+#before
+$mysip = new sip2;
+
+#after
+use lordelph\SIP2\SIP2Client;
+
+$mysip = new SIP2Client;
+
+
+```
+
 ## Usage
 
 ``` php
+use lordelph\SIP2\SIP2Client;
+
+
 // create object
-$mysip = new lordelph\SIP2\SIP2Client;
+$mysip = new SIP2Client;
 
 // Set host name
 $mysip->hostname = 'server.example.com';
@@ -41,12 +66,43 @@ $mysip->patronpwd = '010101';
 // connect to SIP server 
 $result = $mysip->connect();
 
-// Get Charged Items Raw response
-$in = $mysip->msgPatronInformation('charged');
+// build a request for patron information
+$request = $mysip->msgPatronInformation('charged');
+
+// send that request and obtain a raw response
+$response = $mysip->getMessage($request)
 
 // parse the raw response into an array
-$result = $mysip->parsePatronInfoResponse( $mysip->getMessage($in) );
+$result = $mysip->parsePatronInfoResponse($response);
 ```
+
+## Binding to a specific local outbound address
+
+If connecting to a SIP2 service over the internet, such services will usually be tightly firewalled
+to specific IPs. If your client software is running on a machine with multiple outbound interfaces,
+you may wish to pick the specific interface so that the SIP2 server sees the correct IP.
+
+To do this, specify the IP with `bindTo` public member variable *before* calling `connect()`:
+
+
+``` php
+use lordelph\SIP2\SIP2Client;
+
+
+// create object
+$mysip = new SIP2Client;
+
+// Set host name
+$mysip->hostname = 'server.example.com';
+$mysip->port = 6002;
+
+//ensure outbound connections go from this IP address
+$mysip->bindTo = '1.2.3.4';
+
+// connect to SIP server 
+$result = $mysip->connect();
+```
+
 
 ## Change log
 
