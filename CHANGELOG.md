@@ -8,15 +8,19 @@ Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) princip
 
 ### Added
 - MIT License adopted - prior releases were GPL
+- PSR-2 formatting/naming conventions, including change of classname from sip2 to SIP2Client
+- Support for binding to particular interface
+- Full unit tests
 
 ### Deprecated
 - Nothing
 
 ### Fixed
-- Nothing
+- Ensure parseHoldResponse copes with optional elements
+- Ensure getMessage properly handles retries
 
 ### Removed
-- Nothing
+- debug flag, replaced with PSR-3 logger support
 
 ### Security
 - Nothing
