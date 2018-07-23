@@ -31,7 +31,7 @@ $ composer require lordelph/php-sip2
 ## Migration from v1.0
 
 If you want to switch to using this class from [cap60552/php-sip2](https://github.com/cap60552/php-sip2),
-you should only need to change instantations of `sip2` to `SIP2Client` and ensure you include the class with 
+you need to change instantations of `sip2` to `SIP2Client` and ensure you include the class with 
 `use lordelph\SIP2\SIP2Client`
 
 ```php
@@ -42,9 +42,9 @@ $mysip = new sip2;
 use lordelph\SIP2\SIP2Client;
 
 $mysip = new SIP2Client;
-
-
 ```
+
+Also, the `get_message` method is now `getMessage`
 
 ## Usage
 
