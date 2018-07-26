@@ -2,6 +2,7 @@
 
 namespace lordelph\SIP2;
 
+use lordelph\SIP2\Request\SIP2Request;
 use Prophecy\Argument;
 
 /**
@@ -12,6 +13,11 @@ use Prophecy\Argument;
  */
 abstract class AbstractSIP2ClientTest extends \PHPUnit\Framework\TestCase
 {
+    public function setUp()
+    {
+        SIP2Request::resetSequence();
+    }
+
     /**
      * Make a valid response by adding sequence number and CRC
      * @param $str
