@@ -8,11 +8,9 @@ namespace lordelph\SIP2;
  * This class provides a method of communicating with an Integrated
  * Library System using 3M's SIP2 standard.
  *
- * @package
- * @author     John Wohlers <john@wohlershome.net>
  * @licence    https://opensource.org/licenses/MIT
  * @copyright  John Wohlers <john@wohlershome.net>
- * @version    2.0.0
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 
 use lordelph\SIP2\Exception\RuntimeException;
@@ -36,60 +34,20 @@ class SIP2Client implements LoggerAwareInterface
     use LoggerAwareTrait;
 
     //-----------------------------------------------------
-    // connection configuration
+    // request options
+    //-----------------------------------------------------
+
+    /**
+     * @var array name=>value request defaults used for every request
+     */
+    private $default=[];
+
+    //-----------------------------------------------------
+    // connection handling
     //-----------------------------------------------------
 
     /** @var int maximum number of resends in the event of CRC failure */
     public $maxretry = 3;
-
-    //-----------------------------------------------------
-    // patron credentials
-    //-----------------------------------------------------
-
-    /** @var string patron identifier / barcode */
-    public $patron = '';
-
-    /** @var string patron password / pin */
-    public $patronpwd = '';
-
-    //-----------------------------------------------------
-    // request options
-    //-----------------------------------------------------
-
-    /** @var string language code - 001 is English */
-    public $language = '001';
-
-    /**
-     * @var string terminator for requests. This should be just \r (0x0d) according to docs, but some vendors
-     * require \r\n
-     */
-    public $msgTerminator = "\r\n";
-
-    /** @var string variable length field terminator */
-    public $fldTerminator = '|';
-
-    /** @var int encryption algorithm for user id using during login 0=unencrypted */
-    public $uidAlgorithm = 0;
-
-    /** @var int encryption algorithm for user password using during login (no docs for this) */
-    public $passwordAlgorithm = 0;
-
-    /** @var string Default location used in some request messages */
-    public $location = '';
-
-    /** @var string Institution ID */
-    public $institutionId = 'WohlersSIP';
-
-    /** @var string Patron identifier */
-    public $patronId = '';
-
-    /** @var string Terminal password */
-    public $terminalPassword = '';
-
-
-    //-----------------------------------------------------
-    // internal socket handling
-    //-----------------------------------------------------
 
     /** @var Socket */
     private $socket;
@@ -101,14 +59,17 @@ class SIP2Client implements LoggerAwareInterface
      * Constructor allows you to provide a PSR-3 logger, but you can also use the setLogger method
      * later on.
      *
-     * You can also specific the IP address you want to bind to, which is useful if you have multiple local
-     * IPs, but you want the remote SIP2 service to see a specific IP address
-     *
      * @param LoggerInterface|null $logger
      */
     public function __construct(LoggerInterface $logger = null)
     {
         $this->logger = $logger ?? new NullLogger();
+        $this->setDefault('InstitutionId', 'WohlersSIP');
+    }
+
+    public function setDefault($name, $value)
+    {
+        $this->default[$name] = $value;
     }
 
     /**
@@ -142,6 +103,10 @@ class SIP2Client implements LoggerAwareInterface
      */
     public function sendRequest(SIP2Request $request) : SIP2Response
     {
+        foreach ($this->default as $name => $value) {
+            $request->setDefault($name, $value);
+        }
+
         $raw = $this->getRawResponse($request);
         return SIP2Response::parse($raw);
     }
