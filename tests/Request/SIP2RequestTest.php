@@ -29,6 +29,15 @@ class SIP2RequestTest extends AbstractSIP2ClientTest
         }
     }
 
+    /**
+     * Test that getting a variable after setting a default works...
+     */
+    public function testDefault()
+    {
+        $login = new LoginRequest();
+        $login->setDefault('SIPLogin', 'foo');
+        $this->assertEquals('foo', $login->getVariable('SIPLogin'));
+    }
 
     /**
      * Test that getting a variable before setting one with no default throws exception
