@@ -13,6 +13,39 @@ use lordelph\SIP2\SIP2Message;
  */
 abstract class SIP2Request extends SIP2Message
 {
+    // can use these constants for getVariable/setVariable/setDefault etc
+    
+    const CANCEL = 'Cancel';
+    const END = 'End';
+    const EXPIRY_DATE = 'ExpiryDate';
+    const FEE_ACKNOWLEDGED = 'FeeAcknowledged';
+    const FEE_IDENTIFIER = 'FeeIdentifier';
+    const HOLD_TYPE = 'HoldType';
+    const INSTITUTION_ID = 'InstitutionID';
+    const ITEM_IDENTIFIER = 'ItemIdentifier';
+    const ITEM_LOCATION = 'ItemLocation';
+    const ITEM_PROPERTIES = 'ItemProperties';
+    const ITEM_TITLE = 'ItemTitle';
+    const LOCATION = 'Location';
+    const MESSAGE = 'Message';
+    const NB_DATEDUE = 'NBDateDue';
+    const NO_BLOCK = 'NoBlock';
+    const PASSWORD_ALGORITHM = 'PasswordAlgorithm';
+    const PATRON_IDENTIFIER = 'PatronIdentifier';
+    const PATRON_PASSWORD = 'PatronPassword';
+    const PAYMENT_AMOUNT = 'PaymentAmount';
+    const PICKUP_LOCATION = 'PickupLocation';
+    const SIP_LOGIN = 'SIPLogin';
+    const SIP_PASSWORD = 'SIPPassword';
+    const START = 'Start';
+    const STATUS = 'Status';
+    const TERMINAL_PASSWORD = 'TerminalPassword';
+    const THIRD_PARTY = 'ThirdParty';
+    const TRANSACTION_IDENTIFIER = 'TransactionIdentifier';
+    const USERID_ALGORITHM = 'UserIdAlgorithm';
+    const VERSION = 'Version';
+    const WIDTH = 'Width';
+
     /** @var string request is built up here */
     private $msgBuild = '';
 
@@ -43,7 +76,7 @@ abstract class SIP2Request extends SIP2Message
     /**
      * Derived class must implement this to build its SIP2 request
      */
-    abstract public function getMessageString($withSeq = true, $withCrc = true) : string;
+    abstract public function getMessageString($withSeq = true, $withCrc = true): string;
 
 
     /**
@@ -83,7 +116,7 @@ abstract class SIP2Request extends SIP2Message
         return true;
     }
 
-    protected function returnMessage($withSeq = true, $withCrc = true) : string
+    protected function returnMessage($withSeq = true, $withCrc = true): string
     {
         /* Finalizes the message and returns it.  Message will remain in msgBuild until newMessage is called */
         if ($withSeq) {
