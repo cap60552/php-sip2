@@ -32,7 +32,7 @@ class SCStatusRequest extends SIP2Request
         $this->newMessage('99');
         $this->addFixedOption($this->getVariable('Status'), 1);
         $this->addFixedOption($this->getVariable('Width'), 3);
-        $this->addFixedOption(sprintf("%03.2f", $this->getVariable('Version')), 4);
+        $this->addFixedOption(sprintf("%03.2f", (float)$this->getVariable('Version')), 4);
 
         return $this->returnMessage($withSeq, $withCrc);
     }

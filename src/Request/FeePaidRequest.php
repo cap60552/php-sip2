@@ -57,8 +57,8 @@ class FeePaidRequest extends SIP2Request
     {
         $this->newMessage('37');
         $this->addFixedOption($this->datestamp(), 18);
-        $this->addFixedOption(sprintf('%02d', $this->getVariable('FeeType')), 2);
-        $this->addFixedOption(sprintf('%02d', $this->getVariable('PaymentType')), 2);
+        $this->addFixedOption(sprintf('%02d', (string)$this->getVariable('FeeType')), 2);
+        $this->addFixedOption(sprintf('%02d', (string)$this->getVariable('PaymentType')), 2);
         $this->addFixedOption($this->getVariable('CurrencyType'), 3);
 
         // due to currency format localization, it is up to the programmer
