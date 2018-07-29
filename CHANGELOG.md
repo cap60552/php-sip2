@@ -9,6 +9,8 @@ Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) princip
 ### Added
 - MIT License adopted - prior releases were GPL
 - PSR-2 formatting/naming conventions, including change of classname from sip2 to SIP2Client
+- PSR-3 logger support
+- Classes for each request and response type
 - Support for binding to particular interface
 - Full unit tests
 
@@ -16,11 +18,10 @@ Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) princip
 - Nothing
 
 ### Fixed
-- Ensure parseHoldResponse copes with optional elements
-- Ensure getMessage properly handles retries
+- Ensure client properly handles retries in event of CRC failure
 
 ### Removed
-- debug flag, replaced with PSR-3 logger support
+- public methods and variables all removed - see [MIGRATION](MIGRATION.md)
 
 ### Security
 - Nothing

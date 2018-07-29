@@ -13,12 +13,13 @@ PHP client library to facilitate communication with Integrated Library System (I
 This is derived from [cap60552/php-sip2](https://github.com/cap60552/php-sip2) by John Wohlers, 
 with following improvements:
 
+* MIT license (with consent of original author who used GPL)
+* Separate classes for each SIP2 request and response type
+* Ability to bind to specific interface when making requests
 * Full unit tests
 * PSR-2 formatting conventions
 * PSR-3 logging
 * PSR-4 auto-loading
-* Ability to bind to specific interface when making requests
-* MIT license (with consent of original author who used GPL)
 
 ## Install
 
@@ -28,53 +29,67 @@ Via Composer
 $ composer require lordelph/php-sip2
 ```
 
-## Migration from v1.0
+## Example
 
-If you want to switch to using this class from [cap60552/php-sip2](https://github.com/cap60552/php-sip2),
-you need to change instantations of `sip2` to `SIP2Client` and ensure you include the class with 
-`use lordelph\SIP2\SIP2Client`
-
+Here's a typical example of use 
 ```php
-#before
-$mysip = new sip2;
-
-#after
 use lordelph\SIP2\SIP2Client;
+use lordelph\SIP2\Request\PatronInformationRequest;
 
+// instantiate client, set any defaults used for all requests,
+// typically you might set the PatronIdentifier and PatronPassword
+// so that you don't have to set this for every request
 $mysip = new SIP2Client;
-```
-
-Also, the `get_message` method is now `getMessage`
-
-## Usage
-
-``` php
-use lordelph\SIP2\SIP2Client;
-
-
-// create object
-$mysip = new SIP2Client;
-
-// Set host name
-$mysip->hostname = 'server.example.com';
-$mysip->port = 6002;
-
-// Identify a patron
-$mysip->patron = '101010101';
-$mysip->patronpwd = '010101';
+$mysip->setDefault('PatronIdentifier', '101010101');
+$mysip->setDefault('PatronPassword', '010101');
 
 // connect to SIP server 
-$result = $mysip->connect();
+$mysip->connect("server.example.com:6002");
 
-// build a request for patron information
-$request = $mysip->msgPatronInformation('charged');
+// to make a request, instantiate relevant request class
+// and configure as appropriate
+$request=new PatronInformationRequest();
+$request->setType('charged');
 
-// send that request and obtain a raw response
-$response = $mysip->getMessage($request)
+// send the request, obtaining, in this case a
+// PatronInformationResponse object
+$response = $mysip->sendRequest($request);
 
-// parse the raw response into an array
-$result = $mysip->parsePatronInfoResponse($response);
+// now we can obtain information from the result object
+$status = $response->getPatronStatus();
+$name = $response->getPersonalName();
+
 ```
+
+## SIP2 requests and responses
+
+All requests defined in SIP2 are available - note that not all SIP2
+services will support every request.
+
+
+| Request  | Response |
+| ------------- | ------------- |
+| PatronStatusRequest  | PatronStatusResponse  |
+| CheckOutRequest | CheckOutResponse |
+| CheckInRequest | CheckInResponse |
+| BlockPatronRequest | PatronStatusResponse |
+| SCStatusRequest | ASCStatusResponse |
+| RequestACSResendRequest | _previous response_ |
+| LoginRequest | LoginResponse |
+| PatronInformationRequest | PatronInformationResponse |
+| EndPatronSessionRequest | EndSessionResponse |
+| FeePaidRequest | FeePaidResponse |
+| ItemInformationRequest | ItemInformationResponse |
+| ItemStatusUpdateRequest | ItemStatusUpdateResponse |
+| PatronEnableRequest | PatronEnableResponse |
+| HoldRequest | HoldResponse |
+| RenewRequest | RenewResponse |
+| RenewAllRequest | RenewAllResponse |
+
+
+## Migration from v1.0
+
+See [MIGRATION](MIGRATION.md) for details.
 
 ## Binding to a specific local outbound address
 
