@@ -4,6 +4,15 @@ namespace lordelph\SIP2;
 
 use lordelph\SIP2\Exception\LogicException;
 
+/**
+ * SIP2Message Class
+ *
+ * This class provides support for getting/setting request and response variables with some magic methods
+ * as well as SIP2 CRC calculation
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  Paul Dixon <paul@elphin.com>
+ */
 abstract class SIP2Message
 {
     /**
@@ -16,9 +25,13 @@ abstract class SIP2Message
     protected $timestamp = null;
 
 
-    protected static function crc($buf)
+    /**
+     * Calculate SIP2 CRC value
+     * @param string $buf
+     * @return string
+     */
+    protected static function crc(string $buf) : string
     {
-        /* Calculate CRC  */
         $sum = 0;
 
         $len = strlen($buf);
@@ -32,12 +45,42 @@ abstract class SIP2Message
         return substr(sprintf("%4X", $crc), -4, 4);
     }
 
-    public function hasVariable($name)
+    /**
+     * Check if class supports given variable
+     * @param string $name
+     * @return bool
+     */
+    public function hasVariable(string $name) : bool
     {
         return isset($this->var[$name]);
     }
 
-    public function getVariable($varName)
+    /**
+     * Set default value for a variable - this can be overridden by setVariable
+     *
+     * This method will allow you to attempt to set a default for a variable which the derived class
+     * does not support, in which case it is silently ignored.
+     *
+     * @param string $name
+     * @param string|array $value
+     */
+    public function setDefault(string $name, $value)
+    {
+        if ($this->hasVariable($name)) {
+            $this->var[$name]['default'] = $value;
+        }
+    }
+
+    /**
+     * Get value of specific variable.
+     *
+     * There is also a magic method which instead of getVariable('PatronStatus') would instead allow
+     * getPatronStatus() to be called
+     *
+     * @param string $varName
+     * @return string|array
+     */
+    public function getVariable(string $varName)
     {
         $this->ensureVariableExists($varName);
         return $this->var[$varName]['value'] ??
@@ -45,6 +88,12 @@ abstract class SIP2Message
             $this->handleMissing($varName);
     }
 
+    /**
+     * Get name/values of all variables
+     *
+     * This can be useful for building JSON-based results of SIP2 responses
+     * @return array
+     */
     public function getAll()
     {
         $result=[];
@@ -54,6 +103,14 @@ abstract class SIP2Message
         return $result;
     }
 
+    /**
+     * Set variable
+     *
+     * Variables which are defined as timestamps are converted to SIP2 date format automatically
+     *
+     * @param $varName
+     * @param string|array $value
+     */
     public function setVariable($varName, $value)
     {
         $this->ensureVariableExists($varName);
@@ -69,15 +126,15 @@ abstract class SIP2Message
                 break;
         }
 
-        return $this->var[$varName]['value'] = $value;
+        $this->var[$varName]['value'] = $value;
     }
 
     /**
      * If $varName is defined as an array, this will append given value. Otherwise value is set as normal
-     * @param $varName
-     * @param $value
+     * @param string $varName
+     * @param string $value
      */
-    public function addVariable($varName, $value)
+    public function addVariable(string $varName, $value)
     {
         $this->ensureVariableExists($varName);
         $type = $this->var[$varName]['type'] ?? 'string';
