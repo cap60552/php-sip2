@@ -9,6 +9,10 @@ namespace lordelph\SIP2\Request;
  * @method setInstitutionId(string $institutionId)
  * @method setItemIdentifier(string $itemIdentifier)
  * @method setTerminalPassword(string $terminalPassword)
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class ItemInformationRequest extends SIP2Request
 {

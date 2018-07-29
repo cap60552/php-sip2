@@ -7,6 +7,10 @@ namespace lordelph\SIP2\Request;
  * checksum in a received message does not match the value calculated by the SC. The ACS should respond by
  * re-transmitting its last message, This message should never include a “sequence number” field, even when error
  * detection is enabled, but would include a “checksum” field since checksums are in use.
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class RequestACSResendRequest extends SIP2Request
 {

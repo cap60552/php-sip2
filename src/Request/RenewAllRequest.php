@@ -11,6 +11,10 @@ namespace lordelph\SIP2\Request;
  * @method setPatronPassword(string $patronPassword)
  * @method setTerminalPassword(string $terminalPassword)
  * @method setFeeAcknowledged(string $yn)
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class RenewAllRequest extends SIP2Request
 {

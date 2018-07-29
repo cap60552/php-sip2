@@ -20,6 +20,10 @@ namespace lordelph\SIP2\Request;
  * @method setPatronPassword(string $patronPassword)
  * @method setFeeAcknowledged(string $yn)
  * @method setCancel(string $yn)
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class CheckOutRequest extends SIP2Request
 {

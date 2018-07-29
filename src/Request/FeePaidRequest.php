@@ -33,6 +33,10 @@ namespace lordelph\SIP2\Request;
  * @method setPatronPassword(string $patronPassword)
  * @method setFeeIdentifier(string $feeId)
  * @method setTransactionIdentifier(string $transactionId)
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class FeePaidRequest extends SIP2Request
 {

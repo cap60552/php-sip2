@@ -5,11 +5,11 @@ namespace lordelph\SIP2\Request;
 use lordelph\SIP2\SIP2Message;
 
 /**
- * Class SIP2Request provides a way to declare the variables a message needs and provide some
- * magic get/set methods which can then be documented with annotations to provide hints as to what can
- * be done with the request.
+ * Class SIP2Request extends SIP2Message with methods for building SIP2 message strings
  *
- * @package lordelph\SIP2
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 abstract class SIP2Request extends SIP2Message
 {

@@ -17,6 +17,10 @@ namespace lordelph\SIP2\Request;
  * @method setTerminalPassword(string $terminalPassword)
  * @method setItemProperties(string $itemProperties)
  * @method setCancel(string $yn)
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class CheckInRequest extends SIP2Request
 {

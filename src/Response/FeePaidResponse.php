@@ -13,6 +13,10 @@ namespace lordelph\SIP2\Response;
  * @method getScreenMessage()
  * @method getPrintLine()
  * @method getSequenceNumber()
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class FeePaidResponse extends SIP2Response
 {

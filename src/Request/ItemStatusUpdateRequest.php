@@ -11,6 +11,10 @@ namespace lordelph\SIP2\Request;
  * @method setItemIdentifier(string $itemIdentifier)
  * @method setTerminalPassword(string $terminalPassword)
  * @method setItemProperties(string $itemProperties)
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class ItemStatusUpdateRequest extends SIP2Request
 {

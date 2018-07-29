@@ -11,6 +11,10 @@ use lordelph\SIP2\SIP2Message;
  *
  * Derived classes declare the variable data they expect to receive, and provide a parser for the 'fixed'
  * fields
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 abstract class SIP2Response extends SIP2Message
 {

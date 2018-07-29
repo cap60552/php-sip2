@@ -14,6 +14,10 @@ namespace lordelph\SIP2\Request;
  * @method setSIPLogin(string $username)
  * @method setSIPPassword(string $password)
  * @method setLocation(string $location)
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class LoginRequest extends SIP2Request
 {

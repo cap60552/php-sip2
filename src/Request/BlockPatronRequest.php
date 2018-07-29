@@ -13,6 +13,10 @@ namespace lordelph\SIP2\Request;
  * @method setMessage(string $message)
  * @method setPatronIdentifier(string $patron)
  * @method setTerminalPassword(string $terminalPassword)
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class BlockPatronRequest extends SIP2Request
 {

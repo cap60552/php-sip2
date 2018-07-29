@@ -10,6 +10,10 @@ namespace lordelph\SIP2\Request;
  * @method setPatronIdentifier(string $patron)
  * @method setTerminalPassword(string $terminalPassword)
  * @method setPatronPassword(string $patronPassword)
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  John Wohlers <john@wohlershome.net>
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 class PatronEnableRequest extends SIP2Request
 {
