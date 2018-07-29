@@ -3,12 +3,20 @@
     "type": "library",
     "description": "Communicate with Integrated Library System (ILS) servers via 3M's SIP2",
     "keywords": [
-        "lordelph",
+        "SIP2",
+        "SIP2Client",
+        "ILS",
         "php-sip2"
     ],
     "homepage": "https://github.com/lordelph/php-sip2",
     "license": "MIT",
     "authors": [
+        {
+            "name": "John Wohlers",
+            "email": "john@wohlershome.net",
+            "homepage": "https://github.com/cap60552",
+            "role": "Developer"
+        },
         {
             "name": "Paul Dixon",
             "email": "paul@elphin.com",
