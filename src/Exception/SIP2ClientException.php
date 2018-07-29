@@ -3,9 +3,11 @@
 namespace lordelph\SIP2\Exception;
 
 /**
- * This is just a 'marker interface' that all exceptions thrown by SIP2Client will
+ * SIP2ClientException is just a 'marker interface' that all exceptions thrown by SIP2Client will
  * implement, allowing integrators to catch all exceptions
- * @package LibLynx\Connect\Exception
+ *
+ * @licence    https://opensource.org/licenses/MIT
+ * @copyright  Paul Dixon <paul@elphin.com>
  */
 interface SIP2ClientException
 {
