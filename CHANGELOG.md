@@ -4,7 +4,7 @@ All notable changes to `php-sip2` will be documented in this file.
 
 Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
-## 2.0.0 - 2018-07-xx
+## 2.0.0 - 2018-07-29
 
 ### Added
 - MIT License adopted - prior releases were GPL
