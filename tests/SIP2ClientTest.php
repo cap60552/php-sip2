@@ -139,7 +139,7 @@ class SIP2ClientTest extends AbstractSIP2ClientTest
 
         //our factory will always fail to connect...
         $factory = $this->prophesize(\Socket\Raw\Factory::class);
-        $factory->createFromString(
+        $factory->createClient(
             Argument::type('string'),
             Argument::any()
         )->willReturn($socket->reveal());
@@ -161,7 +161,7 @@ class SIP2ClientTest extends AbstractSIP2ClientTest
 
         //our factory will always fail to connect...
         $factory = $this->prophesize(\Socket\Raw\Factory::class);
-        $factory->createFromString(
+        $factory->createClient(
             Argument::type('string'),
             Argument::any()
         )->willReturn($socket->reveal());
