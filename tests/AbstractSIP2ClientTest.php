@@ -98,7 +98,7 @@ abstract class AbstractSIP2ClientTest extends \PHPUnit\Framework\TestCase
 
         //our factory just returns our mock
         $factory = $this->prophesize(\Socket\Raw\Factory::class);
-        $factory->createFromString(
+        $factory->createClient(
             Argument::type('string'),
             Argument::any()
         )->willReturn($socket->reveal());

@@ -164,13 +164,13 @@ class SIP2Client implements LoggerAwareInterface
      *
      * @param string $address ip:port of remote SIP2 service
      * @param string|null $bind local ip to bind socket to
-     * @throws RuntimeException if connection cannot be established
+     * @param int $timeout number of seconds to allow for connection to succeed
      */
-    public function connect($address, $bind = null)
+    public function connect($address, $bind = null, $timeout = 15)
     {
         $this->logger->debug("SIP2Client: Attempting connection to $address");
 
-        $this->socket = $this->getSocketFactory()->createFromString($address, $scheme);
+        $this->socket = $this->getSocketFactory()->createClient($address, $timeout);
 
         try {
             if (!empty($bind)) {
