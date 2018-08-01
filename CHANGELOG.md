@@ -4,6 +4,12 @@ All notable changes to `php-sip2` will be documented in this file.
 
 Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
+## 2.0.1 - 2018-08-01
+
+### Added
+- SIP2Client::connect now accepts a timeout parameter, default 15 seconds
+
+
 ## 2.0.0 - 2018-07-29
 
 ### Added
@@ -21,7 +27,8 @@ Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) princip
 - Ensure client properly handles retries in event of CRC failure
 
 ### Removed
-- public methods and variables all removed - see [MIGRATION](MIGRATION.md)
+- original v1 classname changed
+- original public methods and variables all removed - see [MIGRATION](MIGRATION.md)
 
 ### Security
 - Nothing
