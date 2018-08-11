@@ -1,9 +1,9 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Response\LoginResponse;
-use lordelph\SIP2\Response\SIP2Response;
+use cap60552\SIP2\Response\LoginResponse;
+use cap60552\SIP2\Response\SIP2Response;
 
 class LoginResponseTest extends AbstractSIP2ClientTest
 {

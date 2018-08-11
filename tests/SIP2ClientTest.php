@@ -1,10 +1,10 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Exception\RuntimeException;
-use lordelph\SIP2\Request\LoginRequest;
-use lordelph\SIP2\Response\LoginResponse;
+use cap60552\SIP2\Exception\RuntimeException;
+use cap60552\SIP2\Request\LoginRequest;
+use cap60552\SIP2\Response\LoginResponse;
 use Prophecy\Argument;
 
 /**

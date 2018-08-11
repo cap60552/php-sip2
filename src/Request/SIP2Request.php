@@ -1,8 +1,8 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
-use lordelph\SIP2\SIP2Message;
+use cap60552\SIP2\SIP2Message;
 
 /**
  * Class SIP2Request extends SIP2Message with methods for building SIP2 message strings

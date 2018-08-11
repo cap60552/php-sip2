@@ -1,5 +1,5 @@
 {
-    "name": "lordelph/php-sip2",
+    "name": "cap60552/php-sip2",
     "type": "library",
     "description": "Communicate with Integrated Library System (ILS) servers via 3M's SIP2",
     "keywords": [
@@ -8,7 +8,7 @@
         "ILS",
         "php-sip2"
     ],
-    "homepage": "https://github.com/lordelph/php-sip2",
+    "homepage": "https://github.com/cap60552/php-sip2",
     "license": "MIT",
     "authors": [
         {
@@ -20,7 +20,7 @@
         {
             "name": "Paul Dixon",
             "email": "paul@elphin.com",
-            "homepage": "https://github.com/lordelph",
+            "homepage": "https://github.com/cap60552",
             "role": "Developer"
         }
     ],
@@ -38,12 +38,12 @@
     },
     "autoload": {
         "psr-4": {
-            "lordelph\\SIP2\\": "src"
+            "cap60552\\SIP2\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "lordelph\\SIP2\\": "tests"
+            "cap60552\\SIP2\\": "tests"
         }
     },
     "scripts": {

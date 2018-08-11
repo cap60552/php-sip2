@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * PatronEnableRequest can be used by the SC to re-enable canceled patrons. It should only be used for system testing

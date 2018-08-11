@@ -1,8 +1,8 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Exception\LogicException;
+use cap60552\SIP2\Exception\LogicException;
 
 /**
  * SIP2Message Class

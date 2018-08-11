@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * ItemStatusUpdateRequest can be used to send item information to the ACS, without having to do a Checkout or Checkin

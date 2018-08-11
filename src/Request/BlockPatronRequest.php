@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * BlockPatronRequest requests that the patron card be blocked by the ACS. This is, for example, sent when the patron

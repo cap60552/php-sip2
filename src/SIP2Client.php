@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
 /**
  * SIP2Client Class
@@ -13,9 +13,9 @@ namespace lordelph\SIP2;
  * @copyright  Paul Dixon <paul@elphin.com>
  */
 
-use lordelph\SIP2\Exception\RuntimeException;
-use lordelph\SIP2\Request\SIP2Request;
-use lordelph\SIP2\Response\SIP2Response;
+use cap60552\SIP2\Exception\RuntimeException;
+use cap60552\SIP2\Request\SIP2Request;
+use cap60552\SIP2\Response\SIP2Response;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;

@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Exception;
+namespace cap60552\SIP2\Exception;
 
 /**
  * LogicException represents an integration problem - the code is being used incorrectly

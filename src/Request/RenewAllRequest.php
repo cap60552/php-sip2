@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * RenewAllRequest is used to renew all items that the patron has checked out. The ACS should respond with a Renew All

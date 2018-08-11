@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * PatronInformationRequest is a superset of the Patron Status Request message. It should be used to request patron

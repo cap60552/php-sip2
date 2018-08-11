@@ -1,8 +1,8 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Request\LoginRequest;
+use cap60552\SIP2\Request\LoginRequest;
 
 class LoginRequestTest extends AbstractSIP2ClientTest
 {

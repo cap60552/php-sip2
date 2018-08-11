@@ -1,12 +1,12 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Exception\LogicException;
-use lordelph\SIP2\Exception\RuntimeException;
-use lordelph\SIP2\Response\EndSessionResponse;
-use lordelph\SIP2\Response\LoginResponse;
-use lordelph\SIP2\Response\SIP2Response;
+use cap60552\SIP2\Exception\LogicException;
+use cap60552\SIP2\Exception\RuntimeException;
+use cap60552\SIP2\Response\EndSessionResponse;
+use cap60552\SIP2\Response\LoginResponse;
+use cap60552\SIP2\Response\SIP2Response;
 
 class SIP2ResponseTest extends AbstractSIP2ClientTest
 {

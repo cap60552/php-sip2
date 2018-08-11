@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * FeePaidRequest can be used to notify the ACS that a fee has been collected from the patron. The ACS should record

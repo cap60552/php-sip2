@@ -1,8 +1,8 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Request\RequestACSResendRequest;
+use cap60552\SIP2\Request\RequestACSResendRequest;
 
 class RequestACSResendRequestTest extends AbstractSIP2ClientTest
 {

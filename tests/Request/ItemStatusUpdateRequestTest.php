@@ -1,8 +1,8 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Request\ItemStatusUpdateRequest;
+use cap60552\SIP2\Request\ItemStatusUpdateRequest;
 
 class ItemStatusUpdateRequestTest extends AbstractSIP2ClientTest
 {

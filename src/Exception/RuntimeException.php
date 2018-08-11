@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Exception;
+namespace cap60552\SIP2\Exception;
 
 /**
  * RuntimeException is fired for conditions which arise only at runtime, e.g. external services being down

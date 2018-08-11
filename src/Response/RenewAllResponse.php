@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Response;
+namespace cap60552\SIP2\Response;
 
 /**
  * Class RenewAllResponse provides the response from a RenewAllRequest

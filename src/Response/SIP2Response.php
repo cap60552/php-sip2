@@ -1,10 +1,10 @@
 <?php
 
-namespace lordelph\SIP2\Response;
+namespace cap60552\SIP2\Response;
 
-use lordelph\SIP2\Exception\LogicException;
-use lordelph\SIP2\Exception\RuntimeException;
-use lordelph\SIP2\SIP2Message;
+use cap60552\SIP2\Exception\LogicException;
+use cap60552\SIP2\Exception\RuntimeException;
+use cap60552\SIP2\SIP2Message;
 
 /**
  * Class SIP2Response provides a base class for responses and a factory method for constructing them

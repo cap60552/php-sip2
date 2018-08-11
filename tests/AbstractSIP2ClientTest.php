@@ -1,15 +1,13 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Request\SIP2Request;
+use cap60552\SIP2\Request\SIP2Request;
 use Prophecy\Argument;
 
 /**
  * AbstractSIP2ClientTest provides a mock socket which can return a sequence of canned responses, and
  * helpers to assist with asserting the content of a parsed response
- *
- * @package lordelph\SIP2
  */
 abstract class AbstractSIP2ClientTest extends \PHPUnit\Framework\TestCase
 {

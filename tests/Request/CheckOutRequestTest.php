@@ -1,8 +1,8 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Request\CheckOutRequest;
+use cap60552\SIP2\Request\CheckOutRequest;
 
 class CheckOutRequestTest extends AbstractSIP2ClientTest
 {

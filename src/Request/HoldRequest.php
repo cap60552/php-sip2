@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * HoldRequest is used to create, modify, or delete a hold. The ACS should respond with a Hold Response message.

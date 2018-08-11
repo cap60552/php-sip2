@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * CheckInRequest is used by the SC to request to check in an item, and also to cancel a Checkout request that did not

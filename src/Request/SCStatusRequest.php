@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * SCStatusRequest message sends SC status to the ACS. It requires an ACS Status Response message reply from the

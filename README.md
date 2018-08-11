@@ -26,15 +26,15 @@ with following improvements:
 Via Composer
 
 ``` bash
-$ composer require lordelph/php-sip2
+$ composer require cap60552/php-sip2
 ```
 
 ## Example
 
 Here's a typical example of use 
 ```php
-use lordelph\SIP2\SIP2Client;
-use lordelph\SIP2\Request\PatronInformationRequest;
+use cap60552\SIP2\SIP2Client;
+use cap60552\SIP2\Request\PatronInformationRequest;
 
 // instantiate client, set any defaults used for all requests,
 // typically you might set the PatronIdentifier and PatronPassword
@@ -101,7 +101,7 @@ To do this, specify the IP with `bindTo` public member variable *before* calling
 
 
 ``` php
-use lordelph\SIP2\SIP2Client;
+use cap60552\SIP2\SIP2Client;
 
 
 // create object
@@ -151,18 +151,18 @@ The MIT License (MIT). Please see [License File](LICENSE.md) for more informatio
 Note that prior to v2.0.0, the GPL licence was used. The original author, John Wohlers, kindly
 agreed to allow the MIT license terms.
 
-[ico-version]: https://img.shields.io/packagist/v/lordelph/php-sip2.svg?style=flat-square
+[ico-version]: https://img.shields.io/packagist/v/cap60552/php-sip2.svg?style=flat-square
 [ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
-[ico-travis]: https://img.shields.io/travis/lordelph/php-sip2/master.svg?style=flat-square
-[ico-scrutinizer]: https://img.shields.io/scrutinizer/coverage/g/lordelph/php-sip2.svg?style=flat-square
-[ico-code-quality]: https://img.shields.io/scrutinizer/g/lordelph/php-sip2.svg?style=flat-square
-[ico-downloads]: https://img.shields.io/packagist/dt/lordelph/php-sip2.svg?style=flat-square
+[ico-travis]: https://img.shields.io/travis/cap60552/php-sip2/master.svg?style=flat-square
+[ico-scrutinizer]: https://img.shields.io/scrutinizer/coverage/g/cap60552/php-sip2.svg?style=flat-square
+[ico-code-quality]: https://img.shields.io/scrutinizer/g/cap60552/php-sip2.svg?style=flat-square
+[ico-downloads]: https://img.shields.io/packagist/dt/cap60552/php-sip2.svg?style=flat-square
 
-[link-packagist]: https://packagist.org/packages/lordelph/php-sip2
-[link-travis]: https://travis-ci.org/lordelph/php-sip2
-[link-scrutinizer]: https://scrutinizer-ci.com/g/lordelph/php-sip2/code-structure
-[link-code-quality]: https://scrutinizer-ci.com/g/lordelph/php-sip2
-[link-downloads]: https://packagist.org/packages/lordelph/php-sip2
+[link-packagist]: https://packagist.org/packages/cap60552/php-sip2
+[link-travis]: https://travis-ci.org/cap60552/php-sip2
+[link-scrutinizer]: https://scrutinizer-ci.com/g/cap60552/php-sip2/code-structure
+[link-code-quality]: https://scrutinizer-ci.com/g/cap60552/php-sip2
+[link-downloads]: https://packagist.org/packages/cap60552/php-sip2
 [link-author1]: https://github.com/cap60552
-[link-author2]: https://github.com/lordelph
+[link-author2]: https://github.com/cap60552
 [link-contributors]: ../../contributors

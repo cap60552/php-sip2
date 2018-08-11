@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * EndPatronSessionRequest will be sent when a patron has completed all of their transactions. The ACS may, upon

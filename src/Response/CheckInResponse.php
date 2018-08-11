@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Response;
+namespace cap60552\SIP2\Response;
 
 /**
  * Class CheckInResponse provides the response from a CheckInRequest

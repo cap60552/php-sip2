@@ -33,8 +33,8 @@ $name = $result['variable']['AE'];
 
 ## After
 ```php
-use lordelph\SIP2\SIP2Client;
-use lordelph\SIP2\Request\PatronInformationRequest;
+use cap60552\SIP2\SIP2Client;
+use cap60552\SIP2\Request\PatronInformationRequest;
 
 // instantiate client, set any defaults used for all requests
 $mysip = new SIP2Client;

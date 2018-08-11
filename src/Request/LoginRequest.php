@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * LoginRequest can be used to login to an ACS server program. The ACS should respond with the Login Response

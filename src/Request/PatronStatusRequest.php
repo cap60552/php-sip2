@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * PatronStatusRequest is used by the client to request patron information from the SIP2 server. The service must

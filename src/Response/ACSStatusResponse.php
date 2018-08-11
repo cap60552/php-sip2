@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Response;
+namespace cap60552\SIP2\Response;
 
 /**
  * Class ACSStatusResponse provides the response from an SCStatus request

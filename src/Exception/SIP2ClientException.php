@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Exception;
+namespace cap60552\SIP2\Exception;
 
 /**
  * SIP2ClientException is just a 'marker interface' that all exceptions thrown by SIP2Client will

@@ -2,7 +2,7 @@
 
 Contributions are **welcome** and will be fully **credited**.
 
-We accept contributions via Pull Requests on [Github](https://github.com/lordelph/php-sip2).
+We accept contributions via Pull Requests on [Github](https://github.com/cap60552/php-sip2).
 
 
 ## Pull Requests

@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * RenewRequest is used to renew an item. The ACS should respond with a Renew Response message.

@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * RequestACSResendRequest requests the ACS to re-transmit its last message. It is sent by the SC to the ACS when the

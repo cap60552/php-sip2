@@ -1,9 +1,9 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Response\PatronInformationResponse;
-use lordelph\SIP2\Response\SIP2Response;
+use cap60552\SIP2\Response\PatronInformationResponse;
+use cap60552\SIP2\Response\SIP2Response;
 
 class PatronInformationResponseTest extends AbstractSIP2ClientTest
 {

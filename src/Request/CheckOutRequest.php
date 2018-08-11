@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * CheckOutRequest is used by the SC to request to check out an item, and also to cancel a CheckIn request that did

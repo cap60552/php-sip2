@@ -1,8 +1,8 @@
 <?php
 
-namespace lordelph\SIP2;
+namespace cap60552\SIP2;
 
-use lordelph\SIP2\Request\PatronEnableRequest;
+use cap60552\SIP2\Request\PatronEnableRequest;
 
 class PatronEnableRequestTest extends AbstractSIP2ClientTest
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace lordelph\SIP2\Request;
+namespace cap60552\SIP2\Request;
 
 /**
  * ItemInformationRequest may be used to request item information. The ACS should respond with the Item Information
