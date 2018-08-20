@@ -131,15 +131,16 @@ class SIP2ClientTest extends AbstractSIP2ClientTest
     protected function createUnconnectableMockSIP2Server()
     {
         $socket = $this->prophesize(\Socket\Raw\Socket::class);
-        $socket->connect(Argument::type('string'))->will(function () {
+        $socket->connectTimeout(Argument::type('string'), Argument::any())->will(function () {
             throw new \Exception('Test connection failure');
         });
 
+        $socket->setBlocking(Argument::any())->willReturn(true);
         $socket->close()->willReturn(true);
 
         //our factory will always fail to connect...
         $factory = $this->prophesize(\Socket\Raw\Factory::class);
-        $factory->createClient(
+        $factory->createFromString(
             Argument::type('string'),
             Argument::any()
         )->willReturn($socket->reveal());
@@ -158,10 +159,12 @@ class SIP2ClientTest extends AbstractSIP2ClientTest
 
         //we verify bind gets called...
         $socket->bind(Argument::type('string'))->shouldBeCalled()->willReturn(true);
+        $socket->connectTimeout(Argument::type('string'), Argument::any())->willReturn(true);
+        $socket->setBlocking(Argument::any())->willReturn(true);
 
         //our factory will always fail to connect...
         $factory = $this->prophesize(\Socket\Raw\Factory::class);
-        $factory->createClient(
+        $factory->createFromString(
             Argument::type('string'),
             Argument::any()
         )->willReturn($socket->reveal());

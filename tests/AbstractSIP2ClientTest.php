@@ -94,11 +94,13 @@ abstract class AbstractSIP2ClientTest extends \PHPUnit\Framework\TestCase
         $socket->close()->willReturn(true);
 
         $socket->connect(Argument::type('string'))->willReturn(true);
+        $socket->connectTimeout(Argument::type('string'), Argument::any())->willReturn(true);
+        $socket->setBlocking(Argument::any())->willReturn(true);
         $socket->bind(Argument::type('string'))->willReturn(true);
 
         //our factory just returns our mock
         $factory = $this->prophesize(\Socket\Raw\Factory::class);
-        $factory->createClient(
+        $factory->createFromString(
             Argument::type('string'),
             Argument::any()
         )->willReturn($socket->reveal());

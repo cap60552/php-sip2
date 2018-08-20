@@ -4,6 +4,12 @@ All notable changes to `php-sip2` will be documented in this file.
 
 Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
+## 2.0.2 - 2018-08-20
+
+### Fixed
+- SIP2Client::connect binding fixed to avoid a connection attempt before binding
+
+
 ## 2.0.1 - 2018-08-01
 
 ### Added

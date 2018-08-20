@@ -170,17 +170,9 @@ class SIP2Client implements LoggerAwareInterface
     {
         $this->logger->debug("SIP2Client: Attempting connection to $address");
 
-        $this->socket = $this->getSocketFactory()->createClient($address, $timeout);
-
         try {
-            if (!empty($bind)) {
-                $this->logger->debug("SIP2Client: binding socket to $bind");
-                $this->socket->bind($bind);
-            }
-
-            $this->socket->connect($address);
+            $this->socket = $this->createClient($address, $bind, $timeout);
         } catch (\Exception $e) {
-            $this->socket->close();
             $this->socket = null;
             $this->logger->error("SIP2Client: Failed to connect: " . $e->getMessage());
             throw new RuntimeException("Connection failure", 0, $e);
@@ -188,6 +180,42 @@ class SIP2Client implements LoggerAwareInterface
 
         $this->logger->debug("SIP2Client: connected");
     }
+
+    /**
+     * A 'missing' factory method which allows us to establish a socket bound to a particular interface
+     * @param $address
+     * @param $bind
+     * @param $timeout
+     * @return Socket
+     * @throws \Exception
+     */
+    private function createClient($address, $bind, $timeout) : Socket
+    {
+        $factory = $this->getSocketFactory();
+
+        $socket = $factory->createFromString($address, $scheme);
+
+        try {
+            if (!empty($bind)) {
+                $this->logger->debug("SIP2Client: binding socket to $bind");
+                $socket->bind($bind);
+            }
+
+            if ($timeout === null) {
+                $socket->connect($address);
+            } else {
+                // connectTimeout enables non-blocking mode, so turn blocking on again
+                $socket->connectTimeout($address, $timeout);
+                $socket->setBlocking(true);
+            }
+        } catch (\Exception $e) {
+            $socket->close();
+            throw $e;
+        }
+
+        return $socket;
+    }
+
 
     /**
      * Disconnect from ACS
