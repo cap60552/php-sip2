@@ -202,7 +202,6 @@ abstract class SIP2Response extends SIP2Message
 
             $name = self::$mapCodeToVarDef[$field]['name'];
             $this->addVariable($name, $clean);
-
         }
     }
 }
