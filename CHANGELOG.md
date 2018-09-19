@@ -4,6 +4,12 @@ All notable changes to `php-sip2` will be documented in this file.
 
 Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
+## 2.0.3 - 2018-09-19
+
+### Fixed
+- Fixed bug where receiving unexpected, but blank variable fields would cause an
+  exception when calling getAll 
+
 ## 2.0.2 - 2018-08-20
 
 ### Fixed

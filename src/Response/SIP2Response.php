@@ -174,6 +174,14 @@ abstract class SIP2Response extends SIP2Message
         $items = explode("|", substr($response, $start, -7));
 
         foreach ($items as $item) {
+            $value = substr($item, 2);
+
+            //we ignore anything with no value
+            $clean = trim($value, "\x00..\x1F");
+            if ($clean==='') {
+                continue;
+            }
+
             $field = substr($item, 0, 2);
 
             //expected?
@@ -192,15 +200,9 @@ abstract class SIP2Response extends SIP2Message
                 $this->var[$name] = self::$mapCodeToVarDef[$field];
             }
 
-            $value = substr($item, 2);
-            /* SD returns some odd values on occasion, Unable to locate the purpose in spec, so I strip from
-            * the parsed array. Orig values will remain in ['raw'] element
-            */
-            $clean = trim($value, "\x00..\x1F");
-            if ($clean!='') {
-                $name = self::$mapCodeToVarDef[$field]['name'];
-                $this->addVariable($name, $clean);
-            }
+            $name = self::$mapCodeToVarDef[$field]['name'];
+            $this->addVariable($name, $clean);
+
         }
     }
 }
