@@ -4,6 +4,14 @@ All notable changes to `php-sip2` will be documented in this file.
 
 Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
+## 2.0.4 - 2019-06-13
+
+### Fixed
+- SIP2Response::parse now correctly handles responses which do not include a checksum. 
+  Previously, these were rejected, but it will now allow responses which don't include
+  the optional checksum.
+
+
 ## 2.0.3 - 2018-09-19
 
 ### Fixed
