@@ -38,4 +38,18 @@ class ACSStatusResponseTest extends AbstractSIP2ClientTest
         $this->assertEquals('2.00', $response->getProtocol());
         $this->assertEquals('institution', $response->getInstitutionId());
     }
+
+    /**
+     * SIP2 messages don't all have checksums - this is an edited example of an ACS Status response
+     * message seen in the wild
+     */
+    public function testNoChecksum()
+    {
+        $raw="98YYYYYY60000320190614    0015442.00AONHKS|AMExample|BXYYYYYYYYNYYNNYYY|ANWeb|".
+            "AFThis is a long status message which does not include a checksum.|";
+        $response = SIP2Response::parse($raw);
+        $this->assertInstanceOf(ACSStatusResponse::class, $response);
+        $this->assertEquals('Y', $response->getOnline());
+        $this->assertEquals('Example', $response->getLibraryName());
+    }
 }

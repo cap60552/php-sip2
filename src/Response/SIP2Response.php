@@ -153,8 +153,14 @@ abstract class SIP2Response extends SIP2Message
 
     public static function checkCRC($raw)
     {
-        $test = preg_split('/(.{4})$/', trim($raw), 2, PREG_SPLIT_DELIM_CAPTURE);
-        return self::crc($test[0]) == $test[1];
+        if (preg_match('/^(.*AZ)(.{4})$/', trim($raw), $match)) {
+            $plaintext=$match[1];
+            $checksum=$match[2];
+            return self::crc($plaintext) == $checksum;
+        }
+
+        //no checksum added to message
+        return true;
     }
 
     protected function parseVariableData($response, $start)
