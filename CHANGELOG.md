@@ -4,6 +4,12 @@ All notable changes to `php-sip2` will be documented in this file.
 
 Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
+## 2.0.5 - 2019-06-13
+
+### Changed
+- Temporarily disabled testing of php 7.2 from travis - one of the test cases needs a 
+  `:void` return type which would cause the 7.0 and 7.1 tests to fail. 
+  
 ## 2.0.4 - 2019-06-13
 
 ### Fixed
