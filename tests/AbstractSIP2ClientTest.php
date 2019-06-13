@@ -13,7 +13,7 @@ use Prophecy\Argument;
  */
 abstract class AbstractSIP2ClientTest extends \PHPUnit\Framework\TestCase
 {
-    public function setUp():void
+    public function setUp()
     {
         SIP2Request::resetSequence();
     }
