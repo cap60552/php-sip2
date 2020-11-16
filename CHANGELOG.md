@@ -4,6 +4,15 @@ All notable changes to `php-sip2` will be documented in this file.
 
 Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
+## 2.0.6 - 2020-11-16
+
+### Fixed
+- SIP2Response::getRawResponse now trims whitespace from the start and end of responses.
+  It reads until it sees an 0x0D (CR) terminator, but if the remote side uses CR+LF, a 0x0A 
+  will be in the buffer when we read the next response. By trimming the responses, we
+  ensure this still produces a valid result.
+
+
 ## 2.0.5 - 2019-06-13
 
 ### Changed

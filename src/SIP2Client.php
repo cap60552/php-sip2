@@ -134,6 +134,9 @@ class SIP2Client implements LoggerAwareInterface
 
             $result = $result . $terminator;
         }
+        //if the remote end uses CRLF as a terminator, we might have a stray LF in our buffer - by trimming
+        //the responses, we ensure those don't upset us
+        $result=trim($result);
 
         $this->logger->info("SIP2: result={$result}");
 
