@@ -4,6 +4,13 @@ All notable changes to `php-sip2` will be documented in this file.
 
 Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
+## 2.1.0 - 2021-09-28
+
+### Added
+- client allows CRC checks to be disabled with `SIP2Client::enableCRCCheck(false). 
+  Some SIP2 server implementations have been observed to produce invalid CRCs when UTF-8 
+  characters are involved. 
+
 ## 2.0.6 - 2020-11-16
 
 ### Fixed
