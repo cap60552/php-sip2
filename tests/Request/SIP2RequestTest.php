@@ -41,20 +41,22 @@ class SIP2RequestTest extends AbstractSIP2ClientTest
 
     /**
      * Test that getting a variable before setting one with no default throws exception
-     * @expectedException LogicException
      */
     public function testMissingSet()
     {
+        $this->expectException(LogicException::class);
+
         $login = new LoginRequest();
         $login->getVariable('SIPLogin');
     }
 
     /**
      * Test that getting a variable before setting one with no default throws exception
-     * @expectedException LogicException
      */
     public function testBadMethodCall()
     {
+        $this->expectException(LogicException::class);
+
         $login = new LoginRequest();
         $login->garbageCall();
     }

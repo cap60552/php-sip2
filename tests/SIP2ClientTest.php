@@ -2,6 +2,7 @@
 
 namespace lordelph\SIP2;
 
+use lordelph\SIP2\Exception\LogicException;
 use lordelph\SIP2\Exception\RuntimeException;
 use lordelph\SIP2\Request\LoginRequest;
 use lordelph\SIP2\Response\LoginResponse;
@@ -96,11 +97,11 @@ class SIP2ClientTest extends AbstractSIP2ClientTest
 
     /**
      * Test that repeated failure of a SIP2 server to provide a valid CRC produces an exception
-     *
-     * @expectedException RuntimeException
      */
     public function testCRCFailureAbort()
     {
+        $this->expectException(RuntimeException::class);
+
         //our mock socket will return these responses in sequence after each write() to the socket
         //here we simulate a continued failure to provide a valid response, leading us to abort after
         //3 retries
@@ -140,11 +141,11 @@ class SIP2ClientTest extends AbstractSIP2ClientTest
 
     /**
      * Test that failure to connect throws exception
-     *
-     * @expectedException RuntimeException
      */
     public function testConnectionFailure()
     {
+        $this->expectException(RuntimeException::class);
+
         $client = new SIP2Client;
         $client->setSocketFactory($this->createUnconnectableMockSIP2Server());
         $client->connect('10.0.0.0');
