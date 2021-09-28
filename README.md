@@ -118,6 +118,11 @@ $mysip->bindTo = '1.2.3.4';
 $result = $mysip->connect();
 ```
 
+## Disabling CRC checks
+
+Some SIP2 server implementations can provide CRCs which are invalid. You can
+configure the client to skip CRC checks with `SIP2Client::enableCRCCheck(false);`
+
 
 ## Change log
 

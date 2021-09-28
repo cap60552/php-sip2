@@ -13,10 +13,11 @@ class SIP2ResponseTest extends AbstractSIP2ClientTest
     /**
      * Test that a SIP2 service providing a response code we don't know will throw an exception
      *
-     * @expectedException RuntimeException
      */
     public function testResponse()
     {
+        $this->expectException(RuntimeException::class);
+
         $raw =  $this->makeResponse("771");
         SIP2Response::parse($raw);
     }
@@ -67,11 +68,11 @@ class SIP2ResponseTest extends AbstractSIP2ClientTest
 
     /**
      * Test that attempting to get unexpected data on a response will throw exception
-     *
-     * @expectedException LogicException
      */
     public function testGetInvalidVar()
     {
+        $this->expectException(LogicException::class);
+
         $raw =  $this->makeResponse("36".
             "Y".
             "20180711    185645".

@@ -2,6 +2,7 @@
 
 namespace lordelph\SIP2;
 
+use lordelph\SIP2\Exception\LogicException;
 use lordelph\SIP2\Exception\RuntimeException;
 use lordelph\SIP2\Request\LoginRequest;
 use lordelph\SIP2\Response\LoginResponse;
@@ -68,13 +69,39 @@ class SIP2ClientTest extends AbstractSIP2ClientTest
         $this->assertEquals('1', $response->getOk());
     }
 
+    public function testDisabledCRCCheck()
+    {
+        //we disable CRC checks and verify we can accept a bad CRC
+        $responses = [
+            "941AY0AZ1234",
+        ];
+
+        SIP2Client::enableCRCCheck(false);
+
+        $client = new SIP2Client;
+        $client->setSocketFactory($this->createMockSIP2Server($responses));
+
+        $client->connect('10.0.0.0');
+
+        $loginRequest = new LoginRequest();
+        $loginRequest->setSIPLogin('username');
+        $loginRequest->setSIPPassword('password');
+
+        /** @var LoginResponse $response */
+        $response = $client->sendRequest($loginRequest);
+        $this->assertInstanceOf(LoginResponse::class, $response);
+        $this->assertEquals('1', $response->getOk());
+
+        SIP2Client::enableCRCCheck(true);
+    }
+
     /**
      * Test that repeated failure of a SIP2 server to provide a valid CRC produces an exception
-     *
-     * @expectedException RuntimeException
      */
     public function testCRCFailureAbort()
     {
+        $this->expectException(RuntimeException::class);
+
         //our mock socket will return these responses in sequence after each write() to the socket
         //here we simulate a continued failure to provide a valid response, leading us to abort after
         //3 retries
@@ -114,11 +141,11 @@ class SIP2ClientTest extends AbstractSIP2ClientTest
 
     /**
      * Test that failure to connect throws exception
-     *
-     * @expectedException RuntimeException
      */
     public function testConnectionFailure()
     {
+        $this->expectException(RuntimeException::class);
+
         $client = new SIP2Client;
         $client->setSocketFactory($this->createUnconnectableMockSIP2Server());
         $client->connect('10.0.0.0');

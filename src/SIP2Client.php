@@ -55,6 +55,9 @@ class SIP2Client implements LoggerAwareInterface
     /** @var Factory injectable factory for creating socket connections */
     private $socketFactory;
 
+    /** @var bool CRC checks can be disabled by setting this to false */
+    private static $enableCRCChecks = true;
+
     /**
      * Constructor allows you to provide a PSR-3 logger, but you can also use the setLogger method
      * later on.
@@ -71,6 +74,26 @@ class SIP2Client implements LoggerAwareInterface
     {
         $this->default[$name] = $value;
     }
+
+    /**
+     * Can be used to disable CRC checks
+     *
+     * Some SIP2 services have been observed producing invalid CRCs when extended/UTF-8 chars are involved. As
+     * the CRC was originally part of the protocol for noisy serial lines, it serves little purpose in error
+     * checking when connecting via TCP/IP, but disable at your own risk!
+     *
+     * @param bool $enable
+     */
+    public static function enableCRCCheck($enable)
+    {
+        self::$enableCRCChecks = $enable;
+    }
+
+    public static function isCRCCheckEnabled()
+    {
+        return self::$enableCRCChecks;
+    }
+
 
     /**
      * Allows an alternative socket factory to be injected. The allows us to
