@@ -68,6 +68,32 @@ class SIP2ClientTest extends AbstractSIP2ClientTest
         $this->assertEquals('1', $response->getOk());
     }
 
+    public function testDisabledCRCCheck()
+    {
+        //we disable CRC checks and verify we can accept a bad CRC
+        $responses = [
+            "941AY0AZ1234",
+        ];
+
+        SIP2Client::enableCRCCheck(false);
+
+        $client = new SIP2Client;
+        $client->setSocketFactory($this->createMockSIP2Server($responses));
+
+        $client->connect('10.0.0.0');
+
+        $loginRequest = new LoginRequest();
+        $loginRequest->setSIPLogin('username');
+        $loginRequest->setSIPPassword('password');
+
+        /** @var LoginResponse $response */
+        $response = $client->sendRequest($loginRequest);
+        $this->assertInstanceOf(LoginResponse::class, $response);
+        $this->assertEquals('1', $response->getOk());
+
+        SIP2Client::enableCRCCheck(true);
+    }
+
     /**
      * Test that repeated failure of a SIP2 server to provide a valid CRC produces an exception
      *
