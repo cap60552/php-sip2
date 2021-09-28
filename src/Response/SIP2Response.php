@@ -4,6 +4,7 @@ namespace lordelph\SIP2\Response;
 
 use lordelph\SIP2\Exception\LogicException;
 use lordelph\SIP2\Exception\RuntimeException;
+use lordelph\SIP2\SIP2Client;
 use lordelph\SIP2\SIP2Message;
 
 /**
@@ -153,6 +154,10 @@ abstract class SIP2Response extends SIP2Message
 
     public static function checkCRC($raw)
     {
+        if (!SIP2Client::isCRCCheckEnabled()) {
+            //CRC checks are disabled
+            return true;
+        }
         if (preg_match('/^(.*AZ)(.{4})$/', trim($raw), $match)) {
             $plaintext=$match[1];
             $checksum=$match[2];
