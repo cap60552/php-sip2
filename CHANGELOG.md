@@ -4,6 +4,11 @@ All notable changes to `php-sip2` will be documented in this file.
 
 Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
+## 2.1.1 - 2022-05-09
+
+### Changed
+- Updated composer.json to allow php8 as test suite passes without modification
+
 ## 2.1.0 - 2021-09-28
 
 ### Added
